@@ -7,15 +7,16 @@ from Swarm import Swarm
 from utils import is_point_in_polygon
 from Parameters import Parameters, CellState
 import random
+from utils import bfs
 
 
 # Initialize pygame
 pygame.init()
-map0 = Map(AoI, Parameters.cell_size, Parameters.wind_direction, Parameters.wind_strength, num_obstacles=num_of_osbtacles)
+map0 = Map(AoI, Parameters.cell_size, Parameters.wind_direction, Parameters.wind_strength, num_obstacles=num_of_osbtacles, valid_cells=None)
 uav=[]
 for i in range(Parameters.num_of_uavs):
     uav.append(UAV(random.uniform(0.9,1), 0, random.uniform(30,50), None, 100, 100, "./images/uav.png"))
-swarm = Swarm(uav, 100, 400, "V")
+swarm = Swarm(uav, 605, 445, "V")
 
 # Set up the display
 width, height = Parameters.map_width, Parameters.map_height
@@ -65,7 +66,7 @@ def draw_grid():
         pygame.draw.line(window, (200, 200, 200), (0, y), (width, y))
 
 def draw_swarm(swarm):
-    pygame.draw.circle(window, blue,(swarm.x, swarm.y), 5)
+    pygame.draw.circle(window, blue,(swarm.x , swarm.y), 5)
     for uav in swarm.uavs:
         if uav.image:
             window.blit(uav.image, (uav.x, uav.y), (0, 0, 30, 30))
@@ -80,6 +81,8 @@ clock = pygame.time.Clock()
 # Wait for the user to close the window
 running = True
 while running:
+    
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False

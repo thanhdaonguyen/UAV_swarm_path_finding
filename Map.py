@@ -9,7 +9,7 @@ class Cell:
         self.y = y
         self.value = value
         self.state = state
-        self.center_x = center_x
+        self.center_x = center_x    
         self.center_y = center_y
 
     def update_value(self, new_value):
@@ -22,11 +22,12 @@ class Cell:
         return f"x: {self.x}, y: {self.y}, value: {self.value}"
 
 class Map:
-    def __init__(self, AoI, cell_size, wind_direction, wind_strength, num_obstacles=10):
+    def __init__(self, AoI, cell_size, wind_direction, wind_strength, num_obstacles=10, valid_cells=None):
         self.cells = {}
         self.cell_size = cell_size
         self.wind_direction = wind_direction
         self.wind_strength = wind_strength
+        self.valid_cells = []
 
         step = Parameters.cell_size
         cell_size = Parameters.cell_size
@@ -37,16 +38,24 @@ class Map:
                 center_x = x + step // 2
                 center_y = y + step // 2
                 if is_point_in_polygon(center_x, center_y, AoI):
-                    valid_cells.append((center_x, center_y))
                     cell = Cell(x, y, 1, CellState.NOT_SCANNED, center_x, center_y)
                     self.cells[(center_x, center_y)] = cell
+                    valid_cells.append([center_x, center_y, 1])  
                 else:
                     cell = Cell(x, y, 0, CellState.NO_INTEREST, center_x, center_y)
                     self.cells[(center_x, center_y)] = cell
                     
-        # Randomly place obstacles
         if len(valid_cells) >= num_obstacles:
             self.obstacles = random.sample(valid_cells, num_obstacles)
-            for obs_x, obs_y in self.obstacles:
-                cell = Cell(obs_x - step // 2, obs_y - step // 2, -1, CellState.UNREACHABLE, obs_x, obs_y)
-                self.cells[(obs_x, obs_y)] = cell
+            for obstacle in self.obstacles:
+                obs_x, obs_y, _ = obstacle  # Lấy tọa độ x, y từ danh sách
+                if (obs_x, obs_y) in self.cells:
+                    self.cells[(obs_x, obs_y)].update_value(-1)
+                    self.cells[(obs_x, obs_y)].update_state(CellState.UNREACHABLE)
+                
+                # Cập nhật valid_cells để phản ánh rằng ô này là chướng ngại vật
+                for cell in valid_cells:
+                    if cell[0] == obs_x and cell[1] == obs_y:
+                        cell[2] = -1  # Cập nhật giá trị của ô thành chướng ngại vật
+                        break
+        self.valid_cells = valid_cells

@@ -29,7 +29,7 @@ class Swarm:
                 force_vector[0] += force_x * cell.value
                 force_vector[1] += force_y * cell.value
         # Normalize the force vector
-        print(self.force_vector)
+        # print(self.force_vector)
         force_x = force_vector[0] / (force_vector[0] ** 2 + force_vector[1] ** 2) ** 0.5
         force_y = force_vector[1] / (force_vector[0] ** 2 + force_vector[1] ** 2) ** 0.5
         self.force_vector = (force_x, force_y)
