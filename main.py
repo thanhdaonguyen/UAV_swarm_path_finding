@@ -1,20 +1,21 @@
 import pygame
 import sys
-from map_setting import AoI
+from map_setting import AoI, num_of_osbtacles
 from Map import Map
 from UAV import UAV
 from Swarm import Swarm
 from utils import is_point_in_polygon
 from Parameters import Parameters, CellState
+import random
 
 
 # Initialize pygame
 pygame.init()
-map0 = Map( AoI, Parameters.cell_size, Parameters.wind_direction, Parameters.wind_strength)
-uav1 = UAV(1, 0, 50, None, 100, 100, "./images/uav.png")
-uav2 = UAV(1, 0, 40, None, 200, 150, "./images/uav.png")
-uav3 = UAV(0.9, 0, 30, None,100, 600, "./images/uav.png")
-swarm = Swarm([uav1, uav2, uav3], 100, 400, "V")
+map0 = Map(AoI, Parameters.cell_size, Parameters.wind_direction, Parameters.wind_strength, num_obstacles=num_of_osbtacles)
+uav=[]
+for i in range(Parameters.num_of_uavs):
+    uav.append(UAV(random.uniform(0.9,1), 0, random.uniform(30,50), None, 100, 100, "./images/uav.png"))
+swarm = Swarm(uav, 100, 400, "V")
 
 # Set up the display
 width, height = Parameters.map_width, Parameters.map_height
@@ -55,7 +56,6 @@ def draw_map(map):
         window.blit(text_surface, text_rect)
 
 
-
 # Draw the grid
 def draw_grid():
     step = Parameters.cell_size 
@@ -65,8 +65,7 @@ def draw_grid():
         pygame.draw.line(window, (200, 200, 200), (0, y), (width, y))
 
 def draw_swarm(swarm):
-    pygame.draw.circle(window, red, (swarm.x, swarm.y), 5)
-
+    pygame.draw.circle(window, blue,(swarm.x, swarm.y), 5)
     for uav in swarm.uavs:
         if uav.image:
             window.blit(uav.image, (uav.x, uav.y), (0, 0, 30, 30))

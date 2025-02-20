@@ -22,7 +22,7 @@ class Swarm:
         # Placeholder for force calculation logic
         force_vector = [0, 0]
         for cell in map.cells.values():
-            if cell.state == CellState.NOT_SCANNED:
+            if cell.state == CellState.NOT_SCANNED and cell.state != CellState.UNREACHABLE:
                 distance = ((cell.x - self.x) ** 2 + (cell.y - self.y) ** 2) ** 0.5
                 force_x = (cell.x - self.x) / distance
                 force_y = (cell.y - self.y) / distance

@@ -1,6 +1,8 @@
 from enum import Enum
 
 
+
+
 class CellState(Enum):
 
     NOT_SCANNED = 0
@@ -15,4 +17,5 @@ class Parameters:
     wind_direction = (0.5, 0.5)
     wind_strength = 10
     cell_size = 30
+    num_of_uavs = 3
 

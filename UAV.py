@@ -21,7 +21,7 @@ class UAV:
 
     def scan(self, map):
         for cell in map.cells.values():
-            if cell.state == CellState.NOT_SCANNED:
+            if cell.state == CellState.NOT_SCANNED and cell.state != CellState.UNREACHABLE:
                 if (self.x - cell.x) ** 2 + (self.y - cell.y) ** 2 < 100:
                     cell.state = CellState.SCANNED
                     cell.update_value(0)
