@@ -22,7 +22,7 @@ class Cell:
         return f"x: {self.x}, y: {self.y}, value: {self.value}"
 
 class Map:
-    def __init__(self, AoI, cell_size, wind_direction, wind_strength, num_obstacles=10, valid_cells=None):
+    def __init__(self, AoI, cell_size, wind_direction, wind_strength, num_of_obstacles_inside=10,num_of_obstacles_outside=10, valid_cells=None):
         self.cells = {}
         self.cell_size = cell_size
         self.wind_direction = wind_direction
@@ -45,8 +45,9 @@ class Map:
                     cell = Cell(x, y, 0, CellState.NO_INTEREST, center_x, center_y)
                     self.cells[(center_x, center_y)] = cell
                     
-        if len(valid_cells) >= num_obstacles:
-            self.obstacles = random.sample(valid_cells, num_obstacles)
+        ## obstacles inside AoI
+        if len(valid_cells) >= num_of_obstacles_inside:
+            self.obstacles = random.sample(valid_cells, num_of_obstacles_inside)
             for obstacle in self.obstacles:
                 obs_x, obs_y, _ = obstacle  # Lấy tọa độ x, y từ danh sách
                 if (obs_x, obs_y) in self.cells:
@@ -59,3 +60,10 @@ class Map:
                         cell[2] = -1  # Cập nhật giá trị của ô thành chướng ngại vật
                         break
         self.valid_cells = valid_cells
+        ## obstacles outside AoI
+        if len(self.cells) >= num_of_obstacles_outside:
+            self.obstacles = random.sample(sorted(self.cells), num_of_obstacles_outside)
+            for obs_x, obs_y in self.obstacles:
+                obs_x, obs_y = (self.cells[(obs_x, obs_y)].center_x, self.cells[(obs_x, obs_y)].center_y)
+                cell = Cell(obs_x - step // 2, obs_y - step // 2, -1, CellState.UNREACHABLE, obs_x, obs_y)
+                self.cells[(obs_x, obs_y)] = cell

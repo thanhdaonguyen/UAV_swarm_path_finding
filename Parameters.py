@@ -1,8 +1,5 @@
 from enum import Enum
 
-
-
-
 class CellState(Enum):
 
     NOT_SCANNED = 0

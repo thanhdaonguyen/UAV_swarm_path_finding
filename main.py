@@ -1,6 +1,6 @@
 import pygame
 import sys
-from map_setting import AoI, num_of_osbtacles
+from map_setting import AoI, num_of_obstacles_inside, num_of_obstacles_outside
 from Map import Map
 from UAV import UAV
 from Swarm import Swarm
@@ -12,7 +12,7 @@ from utils import bfs
 
 # Initialize pygame
 pygame.init()
-map0 = Map(AoI, Parameters.cell_size, Parameters.wind_direction, Parameters.wind_strength, num_obstacles=num_of_osbtacles, valid_cells=None)
+map0 = Map(AoI, Parameters.cell_size, Parameters.wind_direction, Parameters.wind_strength, num_of_obstacles_inside=num_of_obstacles_inside,num_of_obstacles_outside = num_of_obstacles_outside, valid_cells=None)
 uav=[]
 for i in range(Parameters.num_of_uavs):
     uav.append(UAV(random.uniform(0.9,1), 0, random.uniform(30,50), None, 100, 100, "./images/uav.png"))
