@@ -1,54 +1,69 @@
-
-import pygame
-from Map import CellState
+from utils import Vector
+from Parameters import Parameters
+from enum import Enum
+from Map import Map
+import random
 
 class UAV:
-    def __init__(self, remain_energy, min_speed, max_speed, buffer_data, pos_X=100, pos_Y=100, image_path=None):
-        self.x = pos_X
-        self.y = pos_Y
+    """
+        UAV class to represent a UAV
+        Attributes:
+            remain_energy: Remaining energy of the UAV
+            status: Status of the UAV (FREE or BUSY)
+            min_speed: Minimum speed of the UAV
+            max_speed: Maximum speed of the UAV
+            buffer_data: Buffer data of the UAV
+            recent_position: Recent position of the UAV in pixel
+            target_position: Target position of the UAV in pixel
+            direction: Direction of the UAV (Vector object which was normalized)
+            recent_path: Recent path of the UAV
+            image_path: Path to the image of the UAV
+    """
+    class UAVState(Enum):
+        FREE = 0
+        BUSY = 1
+
+    def __init__(self, remain_energy, min_speed, max_speed, buffer_data, recent_position, image_path=None, recent_path=None, target_position=None):
+        self.recent_position = recent_position
+        self.recent_path = recent_path
+        self.target_position = target_position
+        self.status = self.UAVState.FREE
         self.remain_energy = remain_energy
         self.min_speed = min_speed
         self.max_speed = max_speed
+        self.direction = Vector(0, 0)
         self.buffer_data = buffer_data
-        self.force_vector = [0, 0]
-        if image_path:
-            self.load_image(image_path)
+        self.image_path = image_path
 
+    def set_direction(self, vector):
+        """
+            Set the direction of the UAV
+            Args:
+                vector: Vector object representing the direction of the UAV
+        """
+        self.direction = vector.normalize()
 
-    def load_image(self, image_path):
-        self.image = pygame.image.load(image_path)
-        self.image = pygame.transform.scale(self.image, (30, 30))
+    def get_cell_position(self):
+        """
+            Returns:
+                Tuple of cell position (x, y) of the UAV
+        """
+        return (self.recent_position.x // Parameters.cell_size, self.recent_position.y // Parameters.cell_size)
+
+    def move_a_frame(self):
+        """
+            Move the UAV a frame
+        """
+        self.recent_position.x += self.direction.x * random.uniform(self.min_speed, self.max_speed) / Parameters.FPS
+        self.recent_position.y += self.direction.y * random.uniform(self.min_speed, self.max_speed) / Parameters.FPS
 
     def scan(self, map):
-        for cell in map.cells.values():
-            if cell.state == CellState.NOT_SCANNED:
-                if (self.x - cell.x) ** 2 + (self.y - cell.y) ** 2 < 100:
-                    cell.state = CellState.SCANNED
-                    cell.update_value(0)
-
-    def calculate_force(self, centroid_x, centroid_y, uavs):
-        force_x = centroid_x - self.x
-        force_y = centroid_y - self.y
-
-        for uav in uavs:
-            if uav != self:
-                distance = ((uav.x - self.x) ** 2 + (uav.y - self.y) ** 2) ** 0.5
-                if distance < 50:
-                    force_x += self.x - uav.x
-                    force_y += self.y - uav.y
-
-        #normalize the force vector
-        force_magnitude = (force_x ** 2 + force_y ** 2) ** 0.5
-        if force_magnitude > 0:
-            force_x /= force_magnitude
-            force_y /= force_magnitude
-        self.force_vector = [force_x, force_y]
-
-    def move(self, centroid_x, centroid_y, uavs):
-        self.calculate_force(centroid_x, centroid_y, uavs)
-        self.x += self.force_vector[0]
-        self.y += self.force_vector[1]
-
+        """
+            Scan the map, we assume that scanning is intermediately done by the UAV
+            Args:
+                map: Map object
+        """
+        map.state[map.get_cell_position(self.recent_position)] = Map.CellState.SCANNED
 
     def transmit_data(self):
         if self.buffer_data > 0:
