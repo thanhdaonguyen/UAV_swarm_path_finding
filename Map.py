@@ -1,52 +1,62 @@
-from Parameters import CellState
+from enum import Enum
 from Parameters import Parameters
-from utils import is_point_in_polygon
+from utils import is_point_in_polygon, Vector, Point
 import random
 
-class Cell:
-    def __init__(self, x, y, value, state=CellState.UNKNOWN, center_x=None, center_y=None):
-        self.x = x
-        self.y = y
-        self.value = value
-        self.state = state
-        self.center_x = center_x
-        self.center_y = center_y
-
-    def update_value(self, new_value):
-        self.value = new_value
-    
-    def update_state(self, new_state):
-        self.state = new_state
-
-    def __str__(self):
-        return f"x: {self.x}, y: {self.y}, value: {self.value}"
-
 class Map:
-    def __init__(self, AoI, cell_size, wind_direction, wind_strength, num_obstacles=10):
-        self.cells = {}
-        self.cell_size = cell_size
-        self.wind_direction = wind_direction
-        self.wind_strength = wind_strength
+    """
+        Map class to represent the map of the area of interest
+        Attributes:
+            aoi: Area of Interest, List of cell positition
+            wind: Wind direction, Vector object
+            num_of_obstacles: Number of obstacles to be rendered
+            priority: 2D array to store the priority of each cell, dim: (map_width, map_height)
+            state: 2D array to store the state of each cell, dim: (map_width, map_height)
+            CellState: Enum to represent the state of a cell
+    """
+    class CellState:
+        NOT_SCANNED = 1
+        SCANNED = 2
+        UNREACHABLE = -1
+        NO_INTEREST = 0
 
-        step = Parameters.cell_size
-        cell_size = Parameters.cell_size
-        valid_cells = []  # list valid cells for UAV to scan
+    def __init__(self, aoi, wind, num_of_obstacles):
+        self.aoi = aoi
+        self.wind = wind
+        self.num_of_obstacles = num_of_obstacles
+        self.priority = [[0 for j in range(Parameters.map_height)] for i in range(Parameters.map_width)]
+        self.state = [[Map.CellState.NO_INTEREST for j in range(Parameters.map_height)] for i in range(Parameters.map_width)]
 
-        for x in range(0, Parameters.map_width, step):
-            for y in range(0, Parameters.map_height, step):
-                center_x = x + step // 2
-                center_y = y + step // 2
-                if is_point_in_polygon(center_x, center_y, AoI):
-                    valid_cells.append((center_x, center_y))
-                    cell = Cell(x, y, 1, CellState.NOT_SCANNED, center_x, center_y)
-                    self.cells[(center_x, center_y)] = cell
+        for x in range(Parameters.map_width):
+            for y in range(Parameters.map_height):
+                if is_point_in_polygon(x, y, aoi):
+                    self.state[x][y] = Map.CellState.NOT_SCANNED 
                 else:
-                    cell = Cell(x, y, 0, CellState.NO_INTEREST, center_x, center_y)
-                    self.cells[(center_x, center_y)] = cell
+                    self.state[x][y] = Map.CellState.NO_INTEREST
+
+        
+        all_points = [(x, y) for x in range(Parameters.map_width) for y in range(Parameters.map_height)]
+        points = random.sample(all_points, num_of_obstacles)
+        for x, y in points:
+            self.state[x][y] = Map.CellState.UNREACHABLE
+
+    def top_left_corner_of_the_cell(self, x, y):
+        """
+            Args:
+                x: x-coordinate of the cell in the map
+                y: y-coordinate of the cell in the map
+            Returns:
+                Point object representing the top left corner of the cell
+        """
+        return Point(x * Parameters.cell_size, y * Parameters.cell_size)
+
+    def get_cell_position(self, point):
+        """
+            Args:
+                point: Point object
+            Returns:
+                Tuple of cell position (x, y) of the given point
+        """
+        return (point.x // Parameters.cell_size, point.y // Parameters.cell_size) 
                     
-        # Randomly place obstacles
-        if len(valid_cells) >= num_obstacles:
-            self.obstacles = random.sample(valid_cells, num_obstacles)
-            for obs_x, obs_y in self.obstacles:
-                cell = Cell(obs_x - step // 2, obs_y - step // 2, -1, CellState.UNREACHABLE, obs_x, obs_y)
-                self.cells[(obs_x, obs_y)] = cell
+        
