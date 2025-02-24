@@ -48,7 +48,7 @@ class UAV:
             Returns:
                 Tuple of cell position (x, y) of the UAV
         """
-        return (self.recent_position.x // Parameters.cell_size, self.recent_position.y // Parameters.cell_size)
+        return tuple[self.recent_position.x // Parameters.cell_size, self.recent_position.y // Parameters.cell_size]
 
     def move_a_frame(self):
         """
@@ -57,13 +57,15 @@ class UAV:
         self.recent_position.x += self.direction.x * random.uniform(self.min_speed, self.max_speed) / Parameters.FPS
         self.recent_position.y += self.direction.y * random.uniform(self.min_speed, self.max_speed) / Parameters.FPS
 
-    def scan(self, map):
+    def scanf(self, map):
         """
             Scan the map, we assume that scanning is intermediately done by the UAV
             Args:
                 map: Map object
         """
-        map.state[map.get_cell_position(self.recent_position)] = Map.CellState.SCANNED
+        # map.state[map.get_cell_position(self.recent_position)] = Map.CellState.SCANNED
+        cell_x, cell_y = map.get_cell_position(self.recent_position)  # Unpack the tuple into separate indices
+        map.state[int(cell_x)][int(cell_y)] = Map.CellState.SCANNED
 
     def transmit_data(self):
         if self.buffer_data > 0:

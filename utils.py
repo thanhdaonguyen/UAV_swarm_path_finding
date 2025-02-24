@@ -1,6 +1,7 @@
 from collections import deque
 import heapq
 
+from Parameters import Parameters
 class Point:
     """
         Point class to represent a point in the map
@@ -101,7 +102,7 @@ def wavefront(goal, map):
         horizontal += 1;
 
     def bfs_condition(state_table, result, position):
-        if (state_table[position[0]][position[1]] != CellState.UNREACHABLE and state_table[position[0]][position[1]] != CellState.NO_INTEREST) and result[position[0]][position[1]] == -1:
+        if (state_table[position[0]][position[1]] != Map.CellState.UNREACHABLE and state_table[position[0]][position[1]] != Map.CellState.NO_INTEREST) and result[position[0]][position[1]] == -1:
             return True;
         return False
 
@@ -134,6 +135,48 @@ def wavefront(goal, map):
     
     return result
 
+def find_circle_centers(map):
+    radius=Parameters.radius
+    centers = []
+    step_x = int(radius)
+    step_y = int(radius * 3) 
+
+    # Xác định phạm vi chứa số 1
+    xmin, xmax, ymin, ymax = Parameters.map_height, 0, Parameters.map_width, 0
+    for i in range(len(map)):  
+        for j in range(len(map[0])):  
+            if map[i][j] == 1:
+                xmin, xmax = min(xmin, i), max(xmax, i)
+                ymin, ymax = min(ymin, j), max(ymax, j)
+
+    if xmax < xmin or ymax < ymin:
+        print("No cell with value 1")
+        return []
+    # Duyệt theo dạng lưới lục giác
+    for x in range(xmin, xmax + 1, step_x):
+        offset = (x // step_x) % 2 * (step_y // 2)  # Xen kẽ các hàng
+        for y in range(ymin + offset, ymax + 1, step_y):
+                centers.append((x, y))
+
+    return centers
+
+# def build_list_cell_1(map0):
+#     step = Parameters.cell_size
+
+#     # Tạo ma trận đúng kích thước
+#     list_cell_1 = [[0] * Parameters.map_height for _ in range(Parameters.map_width)]
+
+#     for x in range(0, Parameters.map_width):
+#         for y in range(0, Parameters.map_height):
+#             center_x = x
+#             center_y = y
+
+#             if (center_x, center_y) in map0.priority:
+#                 cell = str(map0.priority[(center_x, center_y)])
+#                 if 0 <= x< Parameters.map_width and 0 <= y < Parameters.map_height:  # Kiểm tra chỉ số hợp lệ
+#                     list_cell_1[x][y] = 1 if cell[-1] == '1' else 0
+
+#     return list_cell_1
 #def tsunami_next_position((recent_uav.cell_x, recent_uav.cell_y), map0, wavefront_map):
     
     

@@ -29,11 +29,11 @@ class Swarm:
             Returns:
                 Tuple of cell position (x, y) of the center of the swarm
         """
-        return (self.center.x // Parameters.cell_size, self.center.y // Parameters.cell_size)
+        return tuple([self.center.x // Parameters.cell_size, self.center.y // Parameters.cell_size])
 
     def scan(self, map):
         for uav in self.uavs:
-            uav.scan(map)
+            uav.scanf(map)
 
     def __repr__(self):
         return f"Swarm(posX={self.center.x}, posY={self.center.y}, formation={self.formation}, uavs={self.uavs})"
