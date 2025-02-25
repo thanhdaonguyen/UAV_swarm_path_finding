@@ -180,3 +180,33 @@ def find_circle_centers(map):
 #def tsunami_next_position((recent_uav.cell_x, recent_uav.cell_y), map0, wavefront_map):
     
     
+def centroid_priority(map, cen_circles, time_to_scan, time_to_move):
+    '''
+    map: array with 0,1 value
+    cen_circles: array store center, center is a tuple (x, y)
+    time_to_scan: time that swarms have to scan the area that has centroid
+    time_to_move: time that swarms have to move to the centroid
+    return: array of centroid based on priority
+    Tổng độ ưu tiên bằng tổng các ô trong vùng quét của centroid
+    Ưu tiên tính bằng công thức: tổng ưu tiên/tổng thời gian di chuyển
+    Thời gian di chuyển: time_to_move + time_to_scan
+    '''
+    #Code cho tôi tại đây
+    # Tạo list ưu tiên
+    priority_list = []
+
+    for center in cen_circles:
+        x, y = center
+        total_priority = 0
+        for i in range(int(x - Parameters.radius), int(x + Parameters.radius) + 1):
+            for j in range(int(y - Parameters.radius), int(y + Parameters.radius) + 1):
+                if 0 <= i < len(map) and 0 <= j < len(map[0]):
+                    total_priority += map[i][j]
+        total_time = time_to_move + time_to_scan
+        priority = total_priority / total_time if total_time > 0 else 0
+        #priority = total_priority
+        priority_list.append((center, priority))
+
+    priority_list.sort(key=lambda x: x[1], reverse=True)
+    print(priority_list)
+    return [center for center, _ in priority_list]

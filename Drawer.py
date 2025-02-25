@@ -73,8 +73,7 @@ class Drawer:
                 pygame.draw.circle(self.window, Drawer.Color.BLUE, (uav.recent_position.x, uav.recent_position.y), 5)
     def draw_circles(self, centers):
         for center in centers:
-            cen= (center[0] * Parameters.cell_size, center[1] * Parameters.cell_size)
-            pygame.draw.circle(self.window, Drawer.Color.BLUE, cen, int(Parameters.radius*Parameters.cell_size), 1)
+            pygame.draw.circle(self.window, Drawer.Color.BLUE, center, int(Parameters.radius*Parameters.cell_size), 1)
 
     def draw_all(self, map, swarm, centers):
         """

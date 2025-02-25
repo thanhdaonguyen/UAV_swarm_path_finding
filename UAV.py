@@ -48,14 +48,14 @@ class UAV:
             Returns:
                 Tuple of cell position (x, y) of the UAV
         """
-        return tuple[self.recent_position.x // Parameters.cell_size, self.recent_position.y // Parameters.cell_size]
+        return tuple([self.recent_position.x // Parameters.cell_size, self.recent_position.y // Parameters.cell_size])
 
     def move_a_frame(self):
         """
             Move the UAV a frame
         """
-        self.recent_position.x += self.direction.x * random.uniform(self.min_speed, self.max_speed) / Parameters.FPS
-        self.recent_position.y += self.direction.y * random.uniform(self.min_speed, self.max_speed) / Parameters.FPS
+        self.recent_position.x += self.direction.x * random.uniform(self.min_speed, self.max_speed)*Parameters.radius/ Parameters.FPS
+        self.recent_position.y += self.direction.y * random.uniform(self.min_speed, self.max_speed)*Parameters.radius/ Parameters.FPS
 
     def scanf(self, map):
         """
