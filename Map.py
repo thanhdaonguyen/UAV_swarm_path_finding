@@ -3,6 +3,8 @@ from Parameters import Parameters
 from utils import is_point_in_polygon, Vector, Point
 import random
 
+random.seed(1)
+
 class Map:
     """
         Map class to represent the map of the area of interest
@@ -16,11 +18,12 @@ class Map:
     """
     class CellState:
         NOT_SCANNED = 1
+        SCANNING = 3
         SCANNED = 2
         UNREACHABLE = -1
         NO_INTEREST = 0
 
-    def __init__(self, aoi, wind, num_of_obstacles):
+    def __init__(self, aoi, wind, num_of_obstacles, max_priority, uavs):
         self.aoi = aoi
         self.wind = wind
         self.num_of_obstacles = num_of_obstacles
@@ -36,9 +39,19 @@ class Map:
 
         
         all_points = [(x, y) for x in range(Parameters.map_width) for y in range(Parameters.map_height)]
-        points = random.sample(all_points, num_of_obstacles)
+        points = random.sample(all_points, num_of_obstacles, )
         for x, y in points:
+            check_valid_cell = True
+            for uav in uavs:
+                if (x, y) == uav.get_cell_position():
+                    check_valid_cell = False
+                    break
             self.state[x][y] = Map.CellState.UNREACHABLE
+
+        for x in range(Parameters.map_width):
+            for y in range(Parameters.map_height):
+                if self.state[x][y] == Map.CellState.NOT_SCANNED:
+                    self.priority[x][y] = random.randint(1, max_priority)
 
     def top_left_corner_of_the_cell(self, x, y):
         """

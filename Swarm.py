@@ -31,7 +31,19 @@ class Swarm:
         """
         return (self.center.x // Parameters.cell_size, self.center.y // Parameters.cell_size)
 
+    def move_a_frame(self):
+        """
+            Move the swarm a frame
+        """
+        for uav in self.uavs:
+            uav.move_a_frame()
+
     def scan(self, map):
+        """
+            Scan the map
+            Args:
+                map: Map object
+        """
         for uav in self.uavs:
             uav.scan(map)
 

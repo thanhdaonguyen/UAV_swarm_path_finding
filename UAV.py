@@ -1,4 +1,4 @@
-from utils import Vector
+from utils import Vector, get_sign
 from Parameters import Parameters
 from enum import Enum
 from Map import Map
@@ -26,6 +26,7 @@ class UAV:
     def __init__(self, remain_energy, min_speed, max_speed, buffer_data, recent_position, image_path=None, recent_path=None, target_position=None):
         self.recent_position = recent_position
         self.recent_path = recent_path
+        self.index_path = 0
         self.target_position = target_position
         self.status = self.UAVState.FREE
         self.remain_energy = remain_energy
@@ -48,22 +49,41 @@ class UAV:
             Returns:
                 Tuple of cell position (x, y) of the UAV
         """
-        return (self.recent_position.x // Parameters.cell_size, self.recent_position.y // Parameters.cell_size)
+        x = int(self.recent_position.x // Parameters.cell_size)
+        y = int(self.recent_position.y // Parameters.cell_size)
+        return (x, y)
 
     def move_a_frame(self):
         """
             Move the UAV a frame
         """
-        self.recent_position.x += self.direction.x * random.uniform(self.min_speed, self.max_speed) / Parameters.FPS
-        self.recent_position.y += self.direction.y * random.uniform(self.min_speed, self.max_speed) / Parameters.FPS
-
+        # self.recent_position.x += self.direction.x * random.uniform(self.min_speed, self.max_speed) / Parameters.FPS
+        # self.recent_position.y += self.direction.y * random.uniform(self.min_speed, self.max_speed) / Parameters.FPS
+        speed = random.uniform(self.min_speed, self.max_speed)
+        if self.recent_path != None:
+            if self.index_path < len(self.recent_path):
+                target_x, target_y = (self.recent_path[self.index_path][0] * Parameters.cell_size + Parameters.cell_size // 2, self.recent_path[self.index_path][1] * Parameters.cell_size + Parameters.cell_size // 2) 
+                dx, dy = target_x - self.recent_position.x, target_y - self.recent_position.y
+                self.set_direction(Vector(dx, dy))
+                dist = (dx ** 2 + dy ** 2) ** 0.5
+                if dist == 0:  # Nếu UAV gần điểm đích, chuyển sang điểm tiếp theo
+                    if self.index_path == len(self.recent_path) - 1:
+                        self.status = self.UAVState.FREE
+                        self.direction = (0, 0)
+                        self.recent_path = None
+                    self.index_path += 1
+                else:
+                    self.recent_position.x += min(abs(speed * self.direction.x / Parameters.FPS), abs(dx)) * get_sign(self.direction.x)
+                    self.recent_position.y += min(abs(speed * self.direction.y / Parameters.FPS), abs(dy)) * get_sign(self.direction.y)
     def scan(self, map):
         """
             Scan the map, we assume that scanning is intermediately done by the UAV
             Args:
                 map: Map object
         """
-        map.state[map.get_cell_position(self.recent_position)] = Map.CellState.SCANNED
+        x, y = map.get_cell_position(self.recent_position)
+        if map.state[int(x)][int(y)] == Map.CellState.NOT_SCANNED or map.state[int(x)][int(y)] == Map.CellState.SCANNING:
+            map.state[int(x)][int(y)] = Map.CellState.SCANNED
 
     def transmit_data(self):
         if self.buffer_data > 0:
