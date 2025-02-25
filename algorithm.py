@@ -181,6 +181,7 @@ def find_path_to_nearest_cell_theta_star(wavefront_map, current_position, map):
                                         result = wavefront_map[nx][ny]
                                         cell = (nx, ny)
                                 else:
+                                    num_of_max_surround_cell = 0
                                     min_cost = g_cost
                                     result = wavefront_map[nx][ny]
                                     cell = (nx, ny)
