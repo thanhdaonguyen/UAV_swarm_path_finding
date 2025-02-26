@@ -73,3 +73,14 @@ class Map:
         return (point.x // Parameters.cell_size, point.y // Parameters.cell_size) 
                     
         
+
+        '''
+        Tổng độ ưu tiên
+        Số lượng uavs
+        Số ô không bị cấm
+        Thời gian di chuyển tới centroid
+        Ưu tiên tính bằng công thức: tổng ưu tiên/tổng thời gian di chuyển
+        Thời gian di chuyển: Thời gian di chuyển của centroid + thời gian quét khu vực có centroid ấy
+        Thời gian quét khu vực centroid = số ô không bị cấm / tốc độ quét của swarm
+        
+        '''

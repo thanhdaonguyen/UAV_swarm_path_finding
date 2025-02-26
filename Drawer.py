@@ -65,7 +65,7 @@ class Drawer:
             Args:
                 swarm: Swarm object
         """
-        pygame.draw.circle(self.window, Drawer.Color.BLUE,(swarm.center.x , swarm.center.y), 5)
+        pygame.draw.circle(self.window, (255, 0, 0), (swarm.center.x, swarm.center.y), 5)
         for uav in swarm.uavs:
             if uav.image_path != None:
                 uav_image = pygame.image.load(uav.image_path)
@@ -73,8 +73,11 @@ class Drawer:
                 self.window.blit(uav_image, (uav.recent_position.x - Parameters.cell_size // 2, uav.recent_position.y - Parameters.cell_size // 2), (0, 0, 30, 30))
             else:
                 pygame.draw.circle(self.window, Drawer.Color.BLUE, (uav.recent_position.x, uav.recent_position.y), 5)
+    def draw_circles(self, centers):
+        for center in centers:
+            pygame.draw.circle(self.window, Drawer.Color.BLUE, center, int(Parameters.radius*Parameters.cell_size), 1)
 
-    def draw_all(self, map, swarm):
+    def draw_all(self, map, swarm, centers):
         """
             Draw the map and the swarm on the window
             Args:
@@ -84,6 +87,7 @@ class Drawer:
         self.window.fill(Drawer.Color.WHITE)
         self.draw_map(map)
         self.draw_swarm(swarm)
+        self.draw_circles(centers)
         self.draw_grid()
         pygame.display.flip()
     

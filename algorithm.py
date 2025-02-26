@@ -42,6 +42,21 @@ def wavefront(goal, map):
 
     return result
 
+def in_circle(x, y, cx, cy, radius):
+    """
+        Check if a point is in the circle
+        Args:
+            x: x-coordinate of the point
+            y: y-coordinate of the point
+            cx: x-coordinate of the center of the circle
+            cy: y-coordinate of the center of the circle
+            radius: Radius of the circle
+        Returns:
+            True if the point is in the circle, False otherwise
+    """
+    return (x - cx) ** 2 + (y - cy) ** 2 <= radius ** 2
+
+
 def find_nearest_cell(wavefront_map, current_position, map):
     """
         Find the nearest cell from the current position
@@ -61,7 +76,6 @@ def find_nearest_cell(wavefront_map, current_position, map):
     def bfs_condition(state_map, shortest_path_map, pos):
         x, y = pos
         return state_map[x][y] != Map.CellState.NO_INTEREST and state_map[x][y] != Map.CellState.UNREACHABLE and shortest_path_map[x][y] == -1
-
     pq = []
     heapq.heappush(pq, (0, current_position[0], current_position[1]))
     shortest_path_map[current_position[0]][current_position[1]] = 0
@@ -82,17 +96,21 @@ def find_nearest_cell(wavefront_map, current_position, map):
                     heapq.heappush(pq, (dist + 1, nx, ny))
     return cell
 
-def find_path_to_nearest_cell_theta_star(wavefront_map, current_position, map):
+def find_path_to_nearest_cell_theta_star(wavefront_map, current_position, map, center, radius):
     """
-        Find the nearest cell from the current position using Theta* algorithm
-        Args:
-            wavefront_map: 2D array representing the wavefront map
-            current_position: Tuple of current position (x, y)
-            map: Map object
-        Returns:
-            Tuple of nearest cell position (x, y) and the path to the cell
+    Find the nearest unexplored cell and path using Theta* algorithm within the wavefront region,
+    prioritizing cells closer to the center within radius.
+    
+    Args:
+        wavefront_map: 2D array representing the wavefront map
+        current_position: Tuple of current position (x, y)
+        map: Map object
+        center: Tuple of center cell position (x, y)
+        radius: Maximum radius for UAV operation (in cell units)
+    
+    Returns:
+        Tuple of (nearest cell position (x, y), path list) or (None, []) if not found
     """
-
     def line_of_sight(map, start, end):
         x0, y0 = start
         x1, y1 = end
@@ -115,52 +133,32 @@ def find_path_to_nearest_cell_theta_star(wavefront_map, current_position, map):
         return True
 
     def heuristic(a, b):
-        """
-            Heuristic function to calculate the distance between two points
-            Args:
-                a: Tuple of point a (x, y)
-                b: Tuple of point b (x, y)
-            Returns:
-                Distance between two points
-        """
         dx = a[0] - b[0]
         dy = a[1] - b[1]
         return (dx ** 2 + dy ** 2) ** 0.5
+
+    def in_circle(x, y, cx, cy, r):
+        return (x - cx) ** 2 + (y - cy) ** 2 <= r ** 2
 
     state_map = np.array(map.state)
     rows, cols = state_map.shape
     shortest_path_map = [[float('inf') for _ in range(cols)] for _ in range(rows)]
     directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-    
-    def count_surround_not_NOT_SCANNED_cell(self, x, y):
-        """
-            Count the number of not NOT_SCANNED cell around the cell (x, y)
-            Args:
-                x: x-coordinate of the cell
-                y: y-coordinate of the cell
-            Returns:
-                Number of not NOT_SCANNED cell around the cell
-        """
-        count = 0;
-        for dx, dy in directions:
-            nx, ny = x + dx, y + dy
-            if 0 <= nx < rows and 0 <= ny < cols and state_map[nx][ny] != Map.CellState.NOT_SCANNED:
-                count += 1
-        return count
 
     def bfs_condition(state_map, shortest_path_map, pos):
         x, y = pos
-        return shortest_path_map[x][y] == float('inf') and state_map[x][y] != Map.CellState.UNREACHABLE
+        return (shortest_path_map[x][y] == float('inf') and 
+                state_map[x][y] != Map.CellState.UNREACHABLE and 
+                in_circle(x, y, center[0], center[1], radius))
 
     pq = []
     heapq.heappush(pq, (0, current_position[0], current_position[1]))
     shortest_path_map[current_position[0]][current_position[1]] = 0
     parent_map = {current_position: current_position}
 
-    min_cost = float('inf')
-    result = -1
-    cell = None
-    num_of_max_surround_cell = 0
+    min_dist_to_center = float('inf')
+    nearest_cell = None
+
     while pq:
         dist, x, y = heapq.heappop(pq)
         for dx, dy in directions:
@@ -168,54 +166,28 @@ def find_path_to_nearest_cell_theta_star(wavefront_map, current_position, map):
             if 0 <= nx < rows and 0 <= ny < cols and bfs_condition(state_map, shortest_path_map, (nx, ny)):
                 if line_of_sight(map, parent_map[(x, y)], (nx, ny)):
                     g_cost = shortest_path_map[x][y] + heuristic((x, y), (nx, ny))
-                    if g_cost < shortest_path_map[nx][ny]:
-                        shortest_path_map[nx][ny] = g_cost
-                        parent_map[(nx, ny)] = parent_map[(x, y)]
-                        if state_map[nx][ny] == Map.CellState.NOT_SCANNED:
-                            if result <= wavefront_map[nx][ny] and min_cost >= g_cost:
-                                if result == wavefront_map[nx][ny]:
-                                    num_of_surround_cell = count_surround_not_NOT_SCANNED_cell(map, nx, ny)
-                                    if num_of_max_surround_cell < num_of_surround_cell:
-                                        num_of_max_surround_cell = num_of_surround_cell
-                                        min_cost = g_cost
-                                        result = wavefront_map[nx][ny]
-                                        cell = (nx, ny)
-                                else:
-                                    num_of_max_surround_cell = 0
-                                    min_cost = g_cost
-                                    result = wavefront_map[nx][ny]
-                                    cell = (nx, ny)
-                        else:
-                            heapq.heappush(pq, (g_cost + heuristic((nx, ny), current_position), nx, ny))
                 else:
                     g_cost = shortest_path_map[x][y] + 1
-                    if g_cost < shortest_path_map[nx][ny]:
-                        shortest_path_map[nx][ny] = g_cost
-                        parent_map[(nx, ny)] = (x, y)
-                        if state_map[nx][ny] == Map.CellState.NOT_SCANNED:
-                            if result <= wavefront_map[nx][ny] and min_cost >= g_cost:
-                                if result == wavefront_map[nx][ny]:
-                                    num_of_surround_cell = count_surround_not_NOT_SCANNED_cell(map, nx, ny)
-                                    if num_of_max_surround_cell < num_of_surround_cell:
-                                        num_of_max_surround_cell = num_of_surround_cell
-                                        min_cost = g_cost
-                                        result = wavefront_map[nx][ny]
-                                        cell = (nx, ny)
-                                else:
-                                    num_of_max_surround_cell = 0
-                                    min_cost = g_cost
-                                    result = wavefront_map[nx][ny]
-                                    cell = (nx, ny)
-                        else:
-                            heapq.heappush(pq, (g_cost + heuristic((nx, ny), current_position), nx, ny))
-    
+
+                if g_cost < shortest_path_map[nx][ny]:
+                    shortest_path_map[nx][ny] = g_cost
+                    parent_map[(nx, ny)] = parent_map[(x, y)] if line_of_sight(map, parent_map[(x, y)], (nx, ny)) else (x, y)
+                    
+                    if state_map[nx][ny] == Map.CellState.NOT_SCANNED:
+                        dist_to_center = heuristic((nx, ny), center)
+                        if dist_to_center < min_dist_to_center:
+                            min_dist_to_center = dist_to_center
+                            nearest_cell = (nx, ny)
+                    heapq.heappush(pq, (g_cost + heuristic((nx, ny), current_position), nx, ny))
+
     # Reconstruct the path
     path = []
-    if cell:
-        current = cell
+    if nearest_cell:
+        current = nearest_cell
         while current != current_position:
             path.append(current)
             current = parent_map[current]
         path.reverse()
 
-    return cell, path
+    print(f"Nearest cell found: {nearest_cell}, Path: {path}")  # Debug
+    return nearest_cell, path
