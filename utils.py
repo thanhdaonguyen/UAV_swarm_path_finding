@@ -170,7 +170,8 @@ def find_circle_centers_and_available_cells(map):
                 centers.append((x, y))
             x += step_x
         y += step_y
-        x = xmin + step_x / 2 if (x - xmin) % step_x == 0 else xmin
+        x = xmin + step_x / 2 if ((y - ymin) / step_y) % 2 == 1 else xmin
+        print("hahaahaha", (x - xmin) % step_x)
     
 
     # Tính các ô thuộc phạm vi của các center:
