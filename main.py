@@ -61,14 +61,15 @@ while running and current_cluster_index < len(clusters_priority):
             break
         
     
-    # Phân công UAV quét trong khu vực 
+    # Phân công UAV quét trong khu vực
     for uav in swarm.uavs:
         if uav.status == UAV.UAVState.FREE or (uav.status == UAV.UAVState.BUSY and uav.recent_path is None):
             uav_cell_position = uav.get_cell_position()
 
             '''Lựa chọn cho các UAV tìm kiếm ô tiếp theo để quét dựa trên vị trí của cluster center hiện tại'''
-            wavefront_map = wavefront((current_cluster_center_cell.x, current_cluster_center_cell.y), map0)
-            next_cell, shortest_path = select_target_cell(wavefront_map, current_cluster_center_cell, map0)
+            cluster_map = create_cluster_map(map0, clusters_available_cells[clusters_priority[current_cluster_index]])
+            wavefront_map = wavefront((current_cluster_center_cell.x, current_cluster_center_cell.y), cluster_map)
+            next_cell, shortest_path = select_target_cell(wavefront_map, current_cluster_center_cell, cluster_map)
             '''Lựa chọn cho các UAV tìm kiếm ô tiếp theo để quét dựa trên vị trí hiện tại của UAV'''
             # wavefront_map = wavefront((uav_cell_position[0], uav_cell_position[1]), map0)
             # next_cell, shortest_path = select_target_cell(wavefront_map, Point(uav_cell_position[0], uav_cell_position[1]), map0)

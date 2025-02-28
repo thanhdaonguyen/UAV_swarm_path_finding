@@ -105,17 +105,18 @@ def wavefront(goal, map):
                 heapq.heappush(pq, (dist + 1, nx, ny))
     
     result = np.array(result, dtype=np.float32)
-    max_value_wavefront = max(result.flatten())
+    # max_value_wavefront = max(result.flatten())
 
-    for i in range(rows):
-        for j in range(cols):
-            if state_map[i][j] != Map.CellState.UNREACHABLE:
-                # print(state_map[x][y])
-                result[i][j] = max_value_wavefront - result[i][j]
+    # for i in range(rows):
+    #     for j in range(cols):
+    #         if state_map[i][j] != Map.CellState.UNREACHABLE:
+    #             # print(state_map[x][y])
+    #             result[i][j] = max_value_wavefront - result[i][j]
 
-    if max(np.array(map.priority).flatten()) != 0:
+    # if max(np.array(map.priority).flatten()) != 0:
         # result += 1
-        result += np.array(map.priority) * max(result.flatten()) / max(np.array(map.priority).flatten())
+        # result += np.array(map.priority) * max(result.flatten()) / max(np.array(map.priority).flatten())
+
 
     return result
 
@@ -510,3 +511,20 @@ def select_target_cell(wavefront_map, current_position, map):
         path.reverse()
 
     return cell, path
+
+import copy
+def create_cluster_map(original_map, cluster_available_cells):
+    """
+    Create a map with the same size as the original map but only contains the available cells in the cluster
+    """
+
+    cluster_map = copy.deepcopy(original_map)
+    for x in range(len(cluster_map.state)):
+        for y in range(len(cluster_map.state[0])):
+            if (x, y) not in cluster_available_cells:
+                if cluster_map.state[x][y] == Map.CellState.UNREACHABLE:
+                    cluster_map.state[x][y] = Map.CellState.UNREACHABLE
+                else:
+                    cluster_map.state[x][y] = Map.CellState.NO_INTEREST 
+    
+    return cluster_map
