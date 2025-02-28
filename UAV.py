@@ -26,7 +26,6 @@ class UAV:
     def __init__(self, remain_energy, min_speed, max_speed, buffer_data, recent_position, image_path=None, recent_path=None, target_position=None):
         self.recent_position = recent_position
         self.recent_path = recent_path
-        self.index_path = 0
         self.target_position = target_position
         self.status = self.UAVState.FREE
         self.remain_energy = remain_energy
@@ -52,6 +51,8 @@ class UAV:
         x = int(self.recent_position.x // Parameters.cell_size)
         y = int(self.recent_position.y // Parameters.cell_size)
         return (x, y)
+
+
     
     def move_a_frame(self):
         """
@@ -75,14 +76,20 @@ class UAV:
                 else:
                     self.recent_position.x += min(abs(speed * self.direction.x / Parameters.FPS), abs(dx)) * get_sign(self.direction.x)
                     self.recent_position.y += min(abs(speed * self.direction.y / Parameters.FPS), abs(dy)) * get_sign(self.direction.y)
+
     def scan(self, map):
         """
             Scan the map, we assume that scanning is intermediately done by the UAV
             Args:
                 map: Map object
         """
-        x, y = map.get_cell_position(self.recent_position)
-        if map.state[int(x)][int(y)] == Map.CellState.NOT_SCANNED or map.state[int(x)][int(y)] == Map.CellState.SCANNING:
+        x, y = float(self.recent_position.x / Parameters.cell_size), float(self.recent_position.y / Parameters.cell_size)
+        # print(f"recent_position = {self.recent_position.x}, {self.recent_position.y}")
+        # print(f"x, y = {x}, {y}")
+        # print(f"int(x), int(y) = {int(x)}, {int(y)}")
+
+
+        if (map.state[int(x)][int(y)] == Map.CellState.NOT_SCANNED or map.state[int(x)][int(y)] == Map.CellState.SCANNING) and (abs(x - int(x) - 0.5) < 0.01 and abs(y - int(y) - 0.5) < 0.01):
             map.state[int(x)][int(y)] = Map.CellState.SCANNED
 
     def transmit_data(self):

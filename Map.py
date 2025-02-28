@@ -1,9 +1,61 @@
 from enum import Enum
 from Parameters import Parameters
-from utils import is_point_in_polygon, Vector, Point
 import random
 
 random.seed(1)
+
+
+class Point:
+    """
+        Point class to represent a point in the map
+        Attributes:
+            x: x-coordinate of the point in pixel
+            y: y-coordinate of the point in pixel
+    """
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+class Vector:
+    """
+        Vector class to represent a vector in the map
+        Attributes:
+            x: x-coordinate of the vector in pixel
+            y: y-coordinate of the vector in pixel
+    """
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+    
+    def normalize(self):
+        """
+            Normalize the vector
+            Returns:
+                Vector object representing the normalized vector
+        """
+        magnitude = (self.x ** 2 + self.y ** 2) ** 0.5
+        if magnitude == 0:
+            return Vector(0, 0)
+        return Vector(self.x / magnitude, self.y / magnitude)
+
+
+def is_point_in_polygon(x, y, polygon):
+    """Check if a point (x, y) is inside a polygon."""
+    n = len(polygon)
+    inside = False
+
+    p1x, p1y = polygon[0]
+    for i in range(n + 1):
+        p2x, p2y = polygon[i % n]
+        if y > min(p1y, p2y):
+            if y <= max(p1y, p2y):
+                if x <= max(p1x, p2x):
+                    if p1y != p2y:
+                        xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                    if p1x == p2x or x <= xinters:
+                        inside = not inside
+        p1x, p1y = p2x, p2y
+    return inside
 
 class Map:
     """
@@ -29,6 +81,7 @@ class Map:
         self.num_of_obstacles = num_of_obstacles
         self.priority = [[0 for j in range(Parameters.map_height)] for i in range(Parameters.map_width)]
         self.state = [[Map.CellState.NO_INTEREST for j in range(Parameters.map_height)] for i in range(Parameters.map_width)]
+        self.cluster_cells = []
 
         for x in range(Parameters.map_width):
             for y in range(Parameters.map_height):
@@ -39,12 +92,10 @@ class Map:
 
         
         all_points = [(x, y) for x in range(Parameters.map_width) for y in range(Parameters.map_height)]
-        points = random.sample(all_points, num_of_obstacles, )
+        points = random.sample(all_points, num_of_obstacles)
         for x, y in points:
-            check_valid_cell = True
             for uav in uavs:
                 if (x, y) == uav.get_cell_position():
-                    check_valid_cell = False
                     break
             self.state[x][y] = Map.CellState.UNREACHABLE
 
@@ -52,6 +103,8 @@ class Map:
             for y in range(Parameters.map_height):
                 if self.state[x][y] == Map.CellState.NOT_SCANNED:
                     self.priority[x][y] = random.randint(1, max_priority)
+
+
 
     def top_left_corner_of_the_cell(self, x, y):
         """
@@ -72,15 +125,36 @@ class Map:
         """
         return (point.x // Parameters.cell_size, point.y // Parameters.cell_size) 
                     
-        
+    @classmethod
+    def is_cluster_scanned(cls, map_state, cluster_center, radius):
+        """
+        Check if the region within radius around cluster_center is fully scanned.
+        """
+        rows = len(map_state)
+        cols = len(map_state[0])
+        center_coor_x = cluster_center.x
+        center_coor_y = cluster_center.y
+        cls.cluster_cells = []
 
-        '''
-        Tổng độ ưu tiên
-        Số lượng uavs
-        Số ô không bị cấm
-        Thời gian di chuyển tới centroid
-        Ưu tiên tính bằng công thức: tổng ưu tiên/tổng thời gian di chuyển
-        Thời gian di chuyển: Thời gian di chuyển của centroid + thời gian quét khu vực có centroid ấy
-        Thời gian quét khu vực centroid = số ô không bị cấm / tốc độ quét của swarm
-        
-        '''
+
+        for x in range(rows):
+            for y in range(cols):
+                cell_coor_x = x * Parameters.cell_size + Parameters.cell_size // 2
+                cell_coor_y = y * Parameters.cell_size + Parameters.cell_size // 2
+                radius = Parameters.radius * Parameters.cell_size
+                
+                if (cell_coor_x - center_coor_x) ** 2 + (cell_coor_y - center_coor_y) ** 2 <= radius ** 2:
+                    cls.cluster_cells.append((x, y))
+
+        # print(cls.cluster_cells)
+
+        for x in range(rows):
+            for y in range(cols):
+                cell_coor_x = x * Parameters.cell_size + Parameters.cell_size // 2
+                cell_coor_y = y * Parameters.cell_size + Parameters.cell_size // 2
+                radius = Parameters.radius * Parameters.cell_size
+                
+                if (cell_coor_x - center_coor_x) ** 2 + (cell_coor_y - center_coor_y) ** 2 <= radius ** 2 and (map_state[x][y] == Map.CellState.NOT_SCANNED or map_state[x][y] == Map.CellState.SCANNING):
+                    return False
+
+        return True

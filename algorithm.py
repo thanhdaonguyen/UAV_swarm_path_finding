@@ -57,7 +57,7 @@ def in_circle(x, y, cx, cy, radius):
     return (x - cx) ** 2 + (y - cy) ** 2 <= radius ** 2
 
 
-def find_nearest_cell(wavefront_map, current_position, map):
+def find_nearest_cell(wavefront_map, current_position, map, centroid_scanned):
     """
         Find the nearest cell from the current position
         Args:
