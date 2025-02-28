@@ -1,4 +1,3 @@
-
 from Parameters import Parameters
 class Point:
     """

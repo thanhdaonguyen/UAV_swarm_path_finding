@@ -53,14 +53,14 @@ class Swarm:
         for uav in self.uavs:
             uav.move_a_frame()
 
-    def scan(self, map):
+    def scan(self, map, cell):
         """
             Scan the map
             Args:
                 map: Map object
         """
         for uav in self.uavs:
-            uav.scan(map)
+            uav.scan(map, cell)
 
     def __repr__(self):
         return f"Swarm(posX={self.center.x}, posY={self.center.y}, formation={self.formation}, uavs={self.uavs})"

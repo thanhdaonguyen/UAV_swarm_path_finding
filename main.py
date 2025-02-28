@@ -4,7 +4,7 @@ from input import aoi, wind, num_of_obstacles, num_of_uavs, uav_start, uav_end
 from Map import Map
 from UAV import UAV
 from Swarm import Swarm
-from algorithm import wavefront, find_nearest_cell, find_path_to_nearest_cell_theta_star
+from algorithm import wavefront, find_nearest_cell, find_path_to_nearest_cell_theta_star,is_region_scanned, swarm_at_center
 import random
 from Drawer import Drawer
 from utils import Point
@@ -31,35 +31,20 @@ running = True
 region_centers = centroid_priority(map0.state, cir_centers, 5, 5)
 for i in range(len(region_centers)):
     region_centers[i] = (region_centers[i][0]*Parameters.cell_size, region_centers[i][1]*Parameters.cell_size)
-# def distance(cell1, cell2):
-#     return ((cell1[0] - cell2[0]) ** 2 + (cell1[1] - cell2[1]) ** 2) ** 0.5
-#========================================================================================================#
-#2 func này để tạm đây vì cho vô utils đang bị bug thiếu map, mà import map trong đó lại dính lỗi vòng lặp import
-def swarm_at_center(swarm, region_center):
-    """
-    Check if all UAVs in the swarm are at the center of the region.
-    """
-    center_cell = (int(region_center.x // Parameters.cell_size), 
-                   int(region_center.y // Parameters.cell_size))
-    for uav in swarm.uavs:
-        uav_cell = uav.get_cell_position()
-        if uav_cell != center_cell:
-            return False
-    print(f"All UAVs at center: {center_cell}")
-    return True
 
-def is_region_scanned(wavefront_map, map_state, center_cell, radius):
+def not_scanned(wavefront_map, map_state, center_cell, radius):
     """
     Check if the region within radius around center_cell is fully scanned.
     """
+    scanning = []
     rows = len(map_state)
     cols = len(map_state[0])
     cx, cy = center_cell
-    for x in range(int(max(0, cx - radius)), int(min(rows, cx + radius + 1))):
-        for y in range(int(max(0, cy - radius)), int(min(cols, cy + radius + 1))):
-            if (x - cx) ** 2 + (y - cy) ** 2 <= radius ** 2 and map_state[x][y] == Map.CellState.NOT_SCANNED:
-                return False
-    return True
+    for x in range(int(max(0, cx - radius)), int(min(rows, cx + radius) + 1)):
+        for y in range(int(max(0, cy - radius)), int(min(cols, cy + radius) + 1)):
+            if (x - cx) ** 2 + (y - cy) ** 2 <= radius ** 2 and ((map_state[x][y] == Map.CellState.SCANNING)):
+                scanning.append((x, y))
+    return scanning
 #============================================================Main========================================#
 running = True
 current_region_index = 0
@@ -99,7 +84,9 @@ while running and current_region_index < len(region_centers):
             reached_center = True
             print(f"Swarm reached center of region {current_region_index}")
 
-    # Quét khu vực sau khi đến tâm - tất cả uav phải đến tâm rồi mưới quét
+    # Quét khu vực sau khi đến tâm - tất cả uav phải đến tâm rồi mới quét
+    if reached_center and current_region_index >= 1:
+        time.sleep(30)
     if reached_center:
         if is_region_scanned(wavefront_map, map0.state, center_cell, Parameters.radius):
             print(f"Region {current_region_index} scanned completely. Moving to next region.")
@@ -109,7 +96,6 @@ while running and current_region_index < len(region_centers):
                 print("All regions scanned. Mission complete!")
                 break
             continue
-
         # Phân công UAV quét trong khu vực
         for uav in swarm.uavs:
             if uav.status == UAV.UAVState.FREE or (uav.status == UAV.UAVState.BUSY and uav.recent_path is None):
@@ -125,14 +111,15 @@ while running and current_region_index < len(region_centers):
                     uav.recent_path = shortest_path
                     uav.index_path = 0
                     uav.status = UAV.UAVState.BUSY
-                    map0.state[next_cell[0]][next_cell[1]] = Map.CellState.SCANNING
+                    print(f"Found next cell to scan in region {current_region_index}: {next_cell}")
+                    print(f"Distance from {center_cell} to {next_cell}: {((center_cell[0] - next_cell[0]) ** 2 + (center_cell[1] - next_cell[1]) ** 2) ** 0.5}")
                     uav.target_position = Point(next_cell[0] * Parameters.cell_size + Parameters.cell_size // 2, 
                                                next_cell[1] * Parameters.cell_size + Parameters.cell_size // 2)
                     print(f"UAV moving to {next_cell} in region {current_region_index}")
-
+                    map0.state[next_cell[0]][next_cell[1]] = Map.CellState.SCANNING
+                    uav.scan(map0, next_cell)
+                    print(f"UAV at {uav_cell} scanned cell {next_cell}")
     swarm.move_a_frame()
-    swarm.scan(map0)
-    
     # Cập nhật trạng thái UAV sau khi di chuyển
     for uav in swarm.uavs:
         if uav.status == UAV.UAVState.BUSY and uav.recent_path and uav.index_path >= len(uav.recent_path):

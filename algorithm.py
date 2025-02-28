@@ -2,7 +2,7 @@ from Map import Map
 from collections import deque
 import numpy as np
 import heapq
-
+import Parameters
 ### Tsunami algo ###
 
 def wavefront(goal, map):
@@ -178,7 +178,8 @@ def find_path_to_nearest_cell_theta_star(wavefront_map, current_position, map, c
                         if dist_to_center < min_dist_to_center:
                             min_dist_to_center = dist_to_center
                             nearest_cell = (nx, ny)
-                    heapq.heappush(pq, (g_cost + heuristic((nx, ny), current_position), nx, ny))
+                    if in_circle(nx, ny, center[0], center[1], radius):
+                        heapq.heappush(pq, (g_cost + heuristic((nx, ny), current_position), nx, ny))
 
     # Reconstruct the path
     path = []
@@ -191,3 +192,30 @@ def find_path_to_nearest_cell_theta_star(wavefront_map, current_position, map, c
 
     print(f"Nearest cell found: {nearest_cell}, Path: {path}")  # Debug
     return nearest_cell, path
+
+
+def swarm_at_center(swarm, region_center):
+    """
+    Check if all UAVs in the swarm are at the center of the region.
+    """
+    center_cell = (int(region_center.x // Parameters.cell_size), 
+                   int(region_center.y // Parameters.cell_size))
+    for uav in swarm.uavs:
+        uav_cell = uav.get_cell_position()
+        if uav_cell != center_cell:
+            return False
+    print(f"All UAVs at center: {center_cell}")
+    return True
+
+def is_region_scanned(wavefront_map, map_state, center_cell, radius):
+    """
+    Check if the region within radius around center_cell is fully scanned.
+    """
+    rows = len(map_state)
+    cols = len(map_state[0])
+    cx, cy = center_cell
+    for x in range(int(max(0, cx - radius)), int(min(rows, cx + radius) + 1)):
+        for y in range(int(max(0, cy - radius)), int(min(cols, cy + radius) + 1)):
+            if (x - cx) ** 2 + (y - cy) ** 2 <= radius ** 2 and ((map_state[x][y] == Map.CellState.NOT_SCANNED)):
+                return False
+    return True

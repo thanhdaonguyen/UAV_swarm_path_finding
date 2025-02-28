@@ -75,14 +75,15 @@ class UAV:
                 else:
                     self.recent_position.x += min(abs(speed * self.direction.x / Parameters.FPS), abs(dx)) * get_sign(self.direction.x)
                     self.recent_position.y += min(abs(speed * self.direction.y / Parameters.FPS), abs(dy)) * get_sign(self.direction.y)
-    def scan(self, map):
+    def scan(self, map, cell):
         """
             Scan the map, we assume that scanning is intermediately done by the UAV
             Args:
                 map: Map object
         """
         x, y = map.get_cell_position(self.recent_position)
-        if map.state[int(x)][int(y)] == Map.CellState.NOT_SCANNED or map.state[int(x)][int(y)] == Map.CellState.SCANNING:
+        cx, cy = cell[0], cell[1]
+        if (map.state[int(x)][int(y)] == Map.CellState.NOT_SCANNED or map.state[int(x)][int(y)] == Map.CellState.SCANNING):
             map.state[int(x)][int(y)] = Map.CellState.SCANNED
 
     def transmit_data(self):
