@@ -9,12 +9,12 @@ class Swarm:
         Attributes:
             uavs: List of UAV objects
             center: Point object representing the center of the swarm
-            formation: String representing the formation of the swarm
+
     """
-    def __init__(self, uavs, center, formation):
+    def __init__(self, uavs, center):
         self.uavs = uavs
         self.center = center
-        self.formation = formation
+
 
     def set_center(self, point):
         """
@@ -30,6 +30,13 @@ class Swarm:
                 Tuple of cell position (x, y) of the center of the swarm
         """
         return (self.center.x // Parameters.cell_size, self.center.y // Parameters.cell_size)
+
+    def move_a_frame(self):
+        """
+            Move the swarm a frame
+        """
+        for uav in self.uavs:
+            uav.move_a_frame()
 
     def scan(self, map):
         for uav in self.uavs:

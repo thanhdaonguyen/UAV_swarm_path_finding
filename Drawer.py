@@ -1,5 +1,5 @@
 import pygame
-from Map import Map
+from Map import Map, Point
 from Parameters import Parameters
 import sys
 
@@ -26,6 +26,7 @@ class Drawer:
         self.window = pygame.display.set_mode((Parameters.map_width * Parameters.cell_size, Parameters.map_height * Parameters.cell_size))
         self.font = pygame.font.SysFont('Arial', 12)
         self.window.fill(Drawer.Color.WHITE)
+        self.clock = pygame.time.Clock()
 
     def draw_map(self, map):
         """
@@ -34,6 +35,7 @@ class Drawer:
                 map: Map object
         """
         cell_color = {
+            Map.CellState.SCANNING: Drawer.Color.YELLOW,
             Map.CellState.NOT_SCANNED: Drawer.Color.WHITE,
             Map.CellState.SCANNED: Drawer.Color.GREEN,  
             Map.CellState.UNREACHABLE: Drawer.Color.RED,
@@ -42,7 +44,7 @@ class Drawer:
 
         for x in range(len(map.state)):
             for y in range(len(map.state[x])):
-                text_surface = self.font.render(str(map.state[x][y]), True, (0, 0, 0))
+                text_surface = self.font.render(str(map.priority[x][y]), True, (0, 0, 0))
                 cell_top_left_point = map.top_left_corner_of_the_cell(x, y)
                 pygame.draw.rect(self.window, cell_color[map.state[x][y]], (cell_top_left_point.x, cell_top_left_point.y, Parameters.cell_size, Parameters.cell_size))
                 text_rect = text_surface.get_rect(center=(cell_top_left_point.x + Parameters.cell_size // 2, cell_top_left_point.y + Parameters.cell_size // 2))
@@ -63,29 +65,58 @@ class Drawer:
             Args:
                 swarm: Swarm object
         """
-        pygame.draw.circle(self.window, Drawer.Color.BLUE,(swarm.center.x , swarm.center.y), 5)
+        pygame.draw.circle(self.window, Drawer.Color.BLUE,(swarm.center.x,  swarm.center.y), 5)
         for uav in swarm.uavs:
             if uav.image_path != None:
+                scaled_width = Parameters.cell_size
+                scaled_height = Parameters.cell_size
                 uav_image = pygame.image.load(uav.image_path)
-                uav_image = pygame.transform.scale(uav_image, (30, 30))
-                self.window.blit(uav_image, (uav.recent_position.x, uav.recent_position.y), (0, 0, 30, 30))
+                uav_image = pygame.transform.scale(uav_image, (scaled_width, scaled_height))
+                self.window.blit(uav_image, (uav.recent_position.x - scaled_width / 2, uav.recent_position.y - scaled_height / 2), (0, 0, 30, 30))
             else:
                 pygame.draw.circle(self.window, Drawer.Color.BLUE, (uav.recent_position.x, uav.recent_position.y), 5)
 
-    def draw_all(self, map, swarm):
+    def draw_circles(self, centers):
+        for center in centers:
+            pygame.draw.circle(self.window, Drawer.Color.BLUE, center, int(Parameters.radius*Parameters.cell_size), 1)
+
+    def draw_cluster_cells(self):
+        # print(Map.cluster_cells)
+        for x, y in Map.cluster_cells:
+            pygame.draw.circle(self.window, Drawer.Color.MAGENTA, (x * Parameters.cell_size + Parameters.cell_size // 2, y * Parameters.cell_size + Parameters.cell_size // 2), 3)
+
+    def draw_wavefront_map(self, wavefront_map):
+        """
+            Draw the wavefront map on the window
+            Args:
+                wavefront_map: 2D array representing the wavefront map
+        """
+        max_value = max([max(row) for row in wavefront_map])
+        for x in range(len(wavefront_map)):
+            for y in range(len(wavefront_map[x])):
+                if wavefront_map[x][y] > 0:
+                    pygame.draw.circle(self.window, Drawer.Color.CYAN, (x * Parameters.cell_size + Parameters.cell_size // 4, y * Parameters.cell_size + Parameters.cell_size // 4), 10 * int(wavefront_map[x][y]) / max_value)
+                
+
+    def draw_all(self, map, swarm, cir_centers, wavefront_map):
         """
             Draw the map and the swarm on the window
             Args:
                 map: Map object
                 swarm: Swarm object
         """
-        clock = pygame.time.Clock()
         self.window.fill(Drawer.Color.WHITE)
         self.draw_map(map)
         self.draw_swarm(swarm)
+        circle_centers = []
+        for i in range(len(cir_centers)):
+            circle_centers.append((cir_centers[i][0], cir_centers[i][1]))
+        self.draw_circles(circle_centers)
+        self.draw_cluster_cells()
+        self.draw_wavefront_map(wavefront_map)
         self.draw_grid()
         pygame.display.flip()
-        clock.tick(Parameters.FPS)
+
     
     def kill_window(self):
         pygame.quit()
