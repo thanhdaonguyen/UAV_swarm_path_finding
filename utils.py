@@ -199,6 +199,7 @@ def calculate_centroid_priority(map :Map, cen_circles, time_to_scan, time_to_mov
     Tổng độ ưu tiên bằng tổng các ô trong vùng quét của centroid
     Ưu tiên tính bằng công thức: tổng ưu tiên/tổng thời gian di chuyển
     Thời gian di chuyển: time_to_move + time_to_scan
+    priority = [(tổng ưu tiên) / (tổng số ô)] / (khoảng cách)
     '''
     priority_list = []
 

@@ -99,10 +99,10 @@ class Map:
                     break
             self.state[x][y] = Map.CellState.UNREACHABLE
 
-        # for x in range(Parameters.map_width):
-        #     for y in range(Parameters.map_height):
-        #         if self.state[x][y] == Map.CellState.NOT_SCANNED:
-        #             self.priority[x][y] = random.randint(1, max_priority)
+        for x in range(Parameters.map_width):
+            for y in range(Parameters.map_height):
+                if self.state[x][y] == Map.CellState.NOT_SCANNED:
+                    self.priority[x][y] = random.randint(1, max_priority)
 
 
 

@@ -19,7 +19,7 @@ from Parameters import Parameters
 drawer = Drawer()                       # Khởi tạo đối tượng Drawer
 uavs = []                               # Khởi tạo danh sách các UAVs
 for i in range(num_of_uavs):
-    uavs.append(UAV(random.uniform(0.9,1), 0, random.uniform(100,200), None, Point(*uav_start), "./images/uav.png"))
+    uavs.append(UAV(random.uniform(0.9,1), 120, 121, None, Point(*uav_start), "./images/uav.png"))
 swarm = Swarm(uavs, Point(605, 445))   # Khởi tạo đội Swarm
 map0 = Map(aoi, wind, num_of_obstacles, 10, uavs) # Khởi tạo đối tượng Map
 # wavefront_map = wavefront((uav_end[0] // Parameters.cell_size, uav_end[1] // Parameters.cell_size), map0)
