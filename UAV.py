@@ -1,8 +1,8 @@
 from utils import Vector, get_sign
-from Parameters import Parameters
 from enum import Enum
 from Map import Map
 import random
+from input import *
 
 class UAV:
     """
@@ -48,20 +48,20 @@ class UAV:
             Returns:
                 Tuple of cell position (x, y) of the UAV
         """
-        x = int(self.recent_position.x // Parameters.cell_size)
-        y = int(self.recent_position.y // Parameters.cell_size)
+        x = int(self.recent_position.x // cell_size)
+        y = int(self.recent_position.y // cell_size)
         return (x, y)
     
     def move_a_frame(self):
         """
             Move the UAV a frame
         """
-        # self.recent_position.x += self.direction.x * random.uniform(self.min_speed, self.max_speed) / Parameters.FPS
-        # self.recent_position.y += self.direction.y * random.uniform(self.min_speed, self.max_speed) / Parameters.FPS
+        # self.recent_position.x += self.direction.x * random.uniform(self.min_speed, self.max_speed) / FPS
+        # self.recent_position.y += self.direction.y * random.uniform(self.min_speed, self.max_speed) / FPS
         speed = random.uniform(self.min_speed, self.max_speed)
         if self.recent_path != None:
             if self.index_path < len(self.recent_path):
-                target_x, target_y = (self.recent_path[self.index_path][0] * Parameters.cell_size + Parameters.cell_size // 2, self.recent_path[self.index_path][1] * Parameters.cell_size + Parameters.cell_size // 2) 
+                target_x, target_y = (self.recent_path[self.index_path][0] * cell_size + cell_size // 2, self.recent_path[self.index_path][1] * cell_size + cell_size // 2) 
                 dx, dy = target_x - self.recent_position.x, target_y - self.recent_position.y
                 self.set_direction(Vector(dx, dy))
                 dist = (dx ** 2 + dy ** 2) ** 0.5
@@ -72,8 +72,8 @@ class UAV:
                         self.recent_path = None
                     self.index_path += 1
                 else:
-                    self.recent_position.x += min(abs(speed * self.direction.x / Parameters.FPS), abs(dx)) * get_sign(self.direction.x)
-                    self.recent_position.y += min(abs(speed * self.direction.y / Parameters.FPS), abs(dy)) * get_sign(self.direction.y)
+                    self.recent_position.x += min(abs(speed * self.direction.x / FPS), abs(dx)) * get_sign(self.direction.x)
+                    self.recent_position.y += min(abs(speed * self.direction.y / FPS), abs(dy)) * get_sign(self.direction.y)
 
     def scan(self, map):
         """
@@ -81,7 +81,7 @@ class UAV:
             Args:
                 map: Map object
         """
-        x, y = float(self.recent_position.x / Parameters.cell_size), float(self.recent_position.y / Parameters.cell_size)
+        x, y = float(self.recent_position.x / cell_size), float(self.recent_position.y / cell_size)
         # print(f"recent_position = {self.recent_position.x}, {self.recent_position.y}")
         # print(f"x, y = {x}, {y}")
         # print(f"int(x), int(y) = {int(x)}, {int(y)}")

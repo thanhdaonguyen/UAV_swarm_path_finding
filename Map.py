@@ -1,6 +1,6 @@
 from enum import Enum
-from Parameters import Parameters
 import random
+from input import *
 
 random.seed(1)
 
@@ -75,23 +75,22 @@ class Map:
         UNREACHABLE = -1
         NO_INTEREST = 0
 
-    def __init__(self, aoi, wind, num_of_obstacles, max_priority, uavs):
+    def __init__(self, aoi, num_of_obstacles, max_priority, uavs):
         self.aoi = aoi
-        self.wind = wind
         self.num_of_obstacles = num_of_obstacles
-        self.priority = [[0 for j in range(Parameters.map_height)] for i in range(Parameters.map_width)]
-        self.state = [[Map.CellState.NO_INTEREST for j in range(Parameters.map_height)] for i in range(Parameters.map_width)]
+        self.priority = [[0 for j in range(map_height)] for i in range(map_width)]
+        self.state = [[Map.CellState.NO_INTEREST for j in range(map_height)] for i in range(map_width)]
         self.cluster_cells = []
 
-        for x in range(Parameters.map_width):
-            for y in range(Parameters.map_height):
+        for x in range(map_width):
+            for y in range(map_height):
                 if is_point_in_polygon(x, y, aoi):
                     self.state[x][y] = Map.CellState.NOT_SCANNED 
                 else:
                     self.state[x][y] = Map.CellState.NO_INTEREST
 
         
-        all_points = [(x, y) for x in range(Parameters.map_width) for y in range(Parameters.map_height)]
+        all_points = [(x, y) for x in range(map_width) for y in range(map_height)]
         points = random.sample(all_points, num_of_obstacles)
         for x, y in points:
             for uav in uavs:
@@ -99,8 +98,8 @@ class Map:
                     break
             self.state[x][y] = Map.CellState.UNREACHABLE
 
-        for x in range(Parameters.map_width):
-            for y in range(Parameters.map_height):
+        for x in range(map_width):
+            for y in range(map_height):
                 if self.state[x][y] == Map.CellState.NOT_SCANNED:
                     self.priority[x][y] = random.randint(1, max_priority)
 
@@ -114,7 +113,7 @@ class Map:
             Returns:
                 Point object representing the top left corner of the cell
         """
-        return Point(x * Parameters.cell_size, y * Parameters.cell_size)
+        return Point(x * cell_size, y * cell_size)
 
     def get_cell_position(self, point):
         """
@@ -123,10 +122,10 @@ class Map:
             Returns:
                 Tuple of cell position (x, y) of the given point
         """
-        return (point.x // Parameters.cell_size, point.y // Parameters.cell_size) 
+        return (point.x // cell_size, point.y // cell_size) 
                     
     @classmethod
-    def is_cluster_scanned(cls, map_state, cluster_center, radius):
+    def is_cluster_scanned(cls, map_state, cluster_center, cell_radius):
         """
         Check if the region within radius around cluster_center is fully scanned.
         """
@@ -139,9 +138,9 @@ class Map:
 
         for x in range(rows):
             for y in range(cols):
-                cell_coor_x = x * Parameters.cell_size + Parameters.cell_size // 2
-                cell_coor_y = y * Parameters.cell_size + Parameters.cell_size // 2
-                radius = Parameters.radius * Parameters.cell_size
+                cell_coor_x = x * cell_size + cell_size // 2
+                cell_coor_y = y * cell_size + cell_size // 2
+                radius = cell_radius * cell_size
                 
                 if (cell_coor_x - center_coor_x) ** 2 + (cell_coor_y - center_coor_y) ** 2 <= radius ** 2:
                     cls.cluster_cells.append((x, y))
@@ -150,9 +149,9 @@ class Map:
 
         for x in range(rows):
             for y in range(cols):
-                cell_coor_x = x * Parameters.cell_size + Parameters.cell_size // 2
-                cell_coor_y = y * Parameters.cell_size + Parameters.cell_size // 2
-                radius = Parameters.radius * Parameters.cell_size
+                cell_coor_x = x * cell_size + cell_size // 2
+                cell_coor_y = y * cell_size + cell_size // 2
+                radius = cell_radius * cell_size
                 
                 if (cell_coor_x - center_coor_x) ** 2 + (cell_coor_y - center_coor_y) ** 2 <= radius ** 2 and (map_state[x][y] == Map.CellState.NOT_SCANNED or map_state[x][y] == Map.CellState.SCANNING):
                     return False

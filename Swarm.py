@@ -1,7 +1,7 @@
 from UAV import UAV
 from utils import Point, Vector
-from Parameters import Parameters
 import random
+from input import *
 
 class Swarm:
     """
@@ -29,7 +29,7 @@ class Swarm:
             Returns:
                 Tuple of cell position (x, y) of the center of the swarm
         """
-        return (self.center.x // Parameters.cell_size, self.center.y // Parameters.cell_size)
+        return (self.center.x // cell_size, self.center.y // cell_size)
 
     def move_a_frame(self):
         """

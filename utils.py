@@ -1,8 +1,8 @@
 from collections import deque
 import heapq
-from Parameters import Parameters
 import numpy as np
 from Map import Map
+from input import *
 
 class Point:
     """
@@ -25,6 +25,7 @@ class Cluster:
         self.center = center
         self.available_cells = available_cells
         self.priority_avg = priority_avg
+        self.end_of_cluster = None
     def distance_to(self, other):
         """Tính khoảng cách Euclidean giữa hai cluster"""
         return math.sqrt((self.center[0] - other.center[0])**2 + (self.center[1] - other.center[1])**2)
@@ -141,11 +142,11 @@ def have_cells_to_scan(center, map):
     Check if there are cells to scan around the center of the region.
     """
     x, y = center
-    radius = Parameters.radius * Parameters.cell_size
+    radius = cell_radius * cell_size
     for i in range(len(map)):
         for j in range(len(map[0])):
-            cell_coor_x = i * Parameters.cell_size + Parameters.cell_size / 2
-            cell_coor_y = j * Parameters.cell_size + Parameters.cell_size / 2
+            cell_coor_x = i * cell_size + cell_size / 2
+            cell_coor_y = j * cell_size + cell_size / 2
             if (cell_coor_x - x) ** 2 + (cell_coor_y - y) ** 2 <= radius ** 2:
                 if map[i][j] == Map.CellState.NOT_SCANNED:
                     return True
@@ -155,14 +156,14 @@ def have_cells_to_scan(center, map):
 
 def find_circle_centers_and_available_cells(map):
     map = map.state
-    radius = Parameters.radius * Parameters.cell_size
+    radius = cell_radius * cell_size
     centers = []
     clusters=[]
     step_x = radius * math.sqrt(3)
     step_y = radius * 1.5
 
     # Xác định phạm vi chứa số 1
-    xmin, ymin = Parameters.map_height, Parameters.map_width
+    xmin, ymin = map_height, map_width
     for i in range(len(map)):  
         for j in range(len(map[0])):  
             if map[i][j] == Map.CellState.NOT_SCANNED:
@@ -172,10 +173,10 @@ def find_circle_centers_and_available_cells(map):
     
     # Duyệt theo dạng lưới lục giác
     # Chuyển các giới hạn x, y về dạng toạ độ trên canvas
-    xmin = xmin * Parameters.cell_size
-    xmax = Parameters.map_width * Parameters.cell_size
-    ymin = ymin * Parameters.cell_size
-    ymax = Parameters.map_height * Parameters.cell_size
+    xmin = xmin * cell_size
+    xmax = map_width * cell_size
+    ymin = ymin * cell_size
+    ymax = map_height * cell_size
 
     x = xmin
     y = ymin
@@ -196,8 +197,8 @@ def find_circle_centers_and_available_cells(map):
         available_cells = []
         for i in range(len(map)):
             for j in range(len(map[0])):
-                cell_coor_x = i * Parameters.cell_size + Parameters.cell_size / 2
-                cell_coor_y = j * Parameters.cell_size + Parameters.cell_size / 2
+                cell_coor_x = i * cell_size + cell_size / 2
+                cell_coor_y = j * cell_size + cell_size / 2
                 if (cell_coor_x - x) ** 2 + (cell_coor_y - y) ** 2 <= radius ** 2:
                     # available_cells.append((cell_coor_x, cell_coor_y))
                     available_cells.append((i, j)) 
@@ -230,9 +231,9 @@ def calculate_centroid_priority(map):
         
     #     for i in range(len(map.state)):
     #         for j in range(len(map.state[0])):
-    #             cell_coor_x = i * Parameters.cell_size + Parameters.cell_size // 2
-    #             cell_coor_y = j * Parameters.cell_size + Parameters.cell_size // 2
-    #             radius = Parameters.radius * Parameters.cell_size
+    #             cell_coor_x = i * cell_size + cell_size // 2
+    #             cell_coor_y = j * cell_size + cell_size // 2
+    #             radius = radius * cell_size
                 
     #             if ((cell_coor_x - x) ** 2 + (cell_coor_y - y) ** 2 <= radius ** 2):
     #                 total_priority += map.priority[i][j]
@@ -250,6 +251,8 @@ def calculate_centroid_priority(map):
     sorted_result = [sorted_clusters[0]]
     remaining_clusters = sorted_clusters[1:]
 
+
+    '''Sắp xếp các cluster theo độ ưu tiên trung bình và khoảng cách so với cluster trước đó'''
     while remaining_clusters:
         prev_cluster = sorted_result[-1]
         next_cluster = max(
@@ -258,7 +261,23 @@ def calculate_centroid_priority(map):
         )
         sorted_result.append(next_cluster)
         remaining_clusters.remove(next_cluster)
-    return sorted_result #priority_list 
+
+
+    '''Tính toán điểm cuối của mỗi cluster'''
+    for i in range(len(sorted_result) - 1):
+        x1, y1 = sorted_result[i].center
+        x2, y2 = sorted_result[i + 1].center
+        dx = x2 - x1
+        dy = y2 - y1
+        magnitude = (dx ** 2 + dy ** 2) ** 0.5
+        dx = dx / magnitude * cell_radius * cell_size
+        dy = dy / magnitude * cell_radius * cell_size
+        sorted_result[i].end_of_cluster = (x1 + dx, y1 + dy)
+        
+    sorted_result[-1].end_of_cluster = sorted_result[-1].center
+
+
+    return sorted_result         #priority_list 
     # priority_list = []
     # for cluster in sorted_result:
     #     priority_list.append(cluster.center)
@@ -269,8 +288,8 @@ def swarm_at_center(swarm, region_center):
     """
     Check if all UAVs in the swarm are at the center of the region.
     """
-    center_cell = (int(region_center.x // Parameters.cell_size), 
-                   int(region_center.y // Parameters.cell_size))
+    center_cell = (int(region_center.x // cell_size), 
+                   int(region_center.y // cell_size))
     for uav in swarm.uavs:
         uav_cell = uav.get_cell_position()
         if uav_cell != center_cell:

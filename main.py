@@ -1,6 +1,6 @@
 import pygame
 import sys
-from input import aoi, wind, num_of_obstacles, num_of_uavs, uav_start, uav_end
+from input import aoi, num_of_obstacles, num_of_uavs, uav_start, uav_end
 from Map import Map, is_point_in_polygon
 from UAV import UAV
 from Swarm import Swarm
@@ -10,7 +10,6 @@ from utils import bfs
 from Drawer import Drawer
 from utils import *
 import time
-from Parameters import Parameters
 
 
 
@@ -21,8 +20,8 @@ uavs = []                               # Khởi tạo danh sách các UAVs
 for i in range(num_of_uavs):
     uavs.append(UAV(random.uniform(0.9,1), 120, 121, None, Point(*uav_start), "./images/uav.png"))
 swarm = Swarm(uavs, Point(605, 445))   # Khởi tạo đội Swarm
-map0 = Map(aoi, wind, num_of_obstacles, 10, uavs) # Khởi tạo đối tượng Map
-# wavefront_map = wavefront((uav_end[0] // Parameters.cell_size, uav_end[1] // Parameters.cell_size), map0)
+map0 = Map(aoi, num_of_obstacles, 10, uavs) # Khởi tạo đối tượng Map
+# wavefront_map = wavefront((uav_end[0] // cell_size, uav_end[1] // cell_size), map0)
 # wavefront_map = None
 uav_index = 0                          # Chỉ số của UAV hiện tại (Dùng để chọn UAV trong đội)
 
@@ -41,7 +40,7 @@ current_cluster_index = 0
 reached_center = False
 start_time = time.time()
 swarm = Swarm(uavs, clusters[0].center)
-FPS = Parameters.FPS
+FPS = FPS
 
 while running and current_cluster_index < len(clusters):
     for event in pygame.event.get():
@@ -51,12 +50,11 @@ while running and current_cluster_index < len(clusters):
     # Cập nhật tâm swarm cho khu vực hiện tại
     current_cluster_center = Point(clusters[current_cluster_index].center[0], clusters[current_cluster_index].center[1])
     swarm.set_center(current_cluster_center)
-    current_cluster_center_cell = Point(int(current_cluster_center.x // Parameters.cell_size), 
-                                   int(current_cluster_center.y // Parameters.cell_size)
-                                  )
+    current_cluster_end_cell = Point(int(clusters[current_cluster_index].end_of_cluster[0] // cell_size), 
+                                        int(clusters[current_cluster_index].end_of_cluster[1] // cell_size))
 
     # Các UAV quét khu vực hiện tại
-    if Map.is_cluster_scanned(map0.state, current_cluster_center, Parameters.radius):
+    if Map.is_cluster_scanned(map0.state, current_cluster_center, cell_radius):
         print(f"Region {current_cluster_index} scanned completely. Moving to next region.")
         current_cluster_index += 1
         if current_cluster_index >= len(clusters):
@@ -71,7 +69,7 @@ while running and current_cluster_index < len(clusters):
 
             '''Lựa chọn cho các UAV tìm kiếm ô tiếp theo để quét dựa trên vị trí của cluster center hiện tại'''
             cluster_map = create_cluster_map(map0, clusters[current_cluster_index].available_cells)
-            wavefront_map = wavefront((current_cluster_center_cell.x, current_cluster_center_cell.y), cluster_map)
+            wavefront_map = wavefront((current_cluster_end_cell.x, current_cluster_end_cell.y), cluster_map)
             next_cell, shortest_path = select_target_cell(wavefront_map, uav_cell_position, cluster_map)
             '''Lựa chọn cho các UAV tìm kiếm ô tiếp theo để quét dựa trên vị trí hiện tại của UAV'''
             # wavefront_map = wavefront((uav_cell_position[0], uav_cell_position[1]), map0)
@@ -88,8 +86,8 @@ while running and current_cluster_index < len(clusters):
                 uav.index_path = 0
                 uav.status = UAV.UAVState.BUSY
                 map0.state[next_cell[0]][next_cell[1]] = Map.CellState.SCANNING
-                uav.target_position = Point(next_cell[0] * Parameters.cell_size + Parameters.cell_size // 2, 
-                                            next_cell[1] * Parameters.cell_size + Parameters.cell_size // 2)
+                uav.target_position = Point(next_cell[0] * cell_size + cell_size // 2, 
+                                            next_cell[1] * cell_size + cell_size // 2)
                 print(f"UAV moving to {next_cell} in cluster {current_cluster_index}")
 
     swarm.move_a_frame()
