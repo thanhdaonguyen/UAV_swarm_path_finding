@@ -454,7 +454,7 @@ def select_target_cell(wavefront_map, current_position, map):
     heapq.heappush(pq, (0, current_position[0], current_position[1]))
     shortest_path_map[current_position[0]][current_position[1]] = 0
     parent_map = {current_position: current_position}
-    print("current_position", current_position)
+    #print("current_position", current_position)
 
     min_cost = float('inf')
     result = -1

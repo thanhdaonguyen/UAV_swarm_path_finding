@@ -73,10 +73,10 @@ while running and current_cluster_index < len(clusters_priority):
             '''Lựa chọn cho các UAV tìm kiếm ô tiếp theo để quét dựa trên vị trí hiện tại của UAV'''
             # wavefront_map = wavefront((uav_cell_position[0], uav_cell_position[1]), map0)
             # next_cell, shortest_path = select_target_cell(wavefront_map, Point(uav_cell_position[0], uav_cell_position[1]), map0)
-            print('path:', shortest_path)
+            #print('path:', shortest_path)
             
             if next_cell is None: 
-                print(f"UAV at {uav_cell_position}: No reachable cell in region {current_cluster_index}")
+                #print(f"UAV at {uav_cell_position}: No reachable cell in region {current_cluster_index}")
                 uav.recent_path = None
                 uav.target_position = None
                 uav.status = UAV.UAVState.FREE
