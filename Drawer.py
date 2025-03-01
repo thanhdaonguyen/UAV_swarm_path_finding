@@ -2,7 +2,7 @@ import pygame
 from Map import Map, Point
 import sys
 from input import *
-
+import os
 class Drawer:
     """
         Class responsible for drawing the simulation
@@ -18,10 +18,17 @@ class Drawer:
         MAGENTA = (255, 0, 255)
         GRAY = (180, 180, 180)
 
-    def __init__(self):
+    def __init__(self, mode):
         pygame.init()
         pygame.font.init()
-        pygame.display.set_caption("UAV4Res simulation")
+
+        if mode == "tsunami":
+            pygame.display.set_caption("Tsunami simulation")
+            os.environ['SDL_VIDEO_WINDOW_POS'] = "100,100"  # Change "100,100" to your desired position
+        
+        elif mode == "UAV4Res":
+            pygame.display.set_caption("UAV4Res simulation")
+            os.environ['SDL_VIDEO_WINDOW_POS'] = "900,100"  # Change "800,100" to your desired position
         
         self.window = pygame.display.set_mode((map_width * cell_size, map_height * cell_size))
         self.font = pygame.font.SysFont('Arial', 12)

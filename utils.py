@@ -175,7 +175,7 @@ def find_circle_centers_and_available_cells(map):
     # Chuyển các giới hạn x, y về dạng toạ độ trên canvas
     xmin = xmin * cell_size
     xmax = map_width * cell_size
-    ymin = ymin * cell_size
+    ymin = ymin  * cell_size + radius / 2
     ymax = map_height * cell_size
 
     x = xmin
@@ -719,8 +719,16 @@ def select_target_cell(wavefront_map, current_position, map):
             current = parent_map[current]
         path.append(current_position)
         path.reverse()
-
-    return cell, path
+    path_to_charge = []
+    cell_charge = (10, 10)
+    if cell_charge:
+        current = cell_charge
+        while current != current_position:
+            path_to_charge.append(current)
+            current = parent_map[current]
+        path_to_charge.append(current_position)
+        path_to_charge.reverse()
+    return cell, path, path_to_charge
 
 import copy
 def create_cluster_map(original_map, cluster_available_cells):
@@ -738,3 +746,9 @@ def create_cluster_map(original_map, cluster_available_cells):
                     cluster_map.state[x][y] = Map.CellState.NO_INTEREST 
     
     return cluster_map
+
+def cal_distance_path(path):
+    dis = 0
+    for i in range(1, len(path)):
+        dis += ((path[i][0] - path[i-1][0])**2 + (path[i][1] - path[i-1][1]))**0.5
+    return dis

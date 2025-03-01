@@ -8,7 +8,7 @@ class UAV:
     """
         UAV class to represent a UAV
         Attributes:
-            remain_energy: Remaining energy of the UAV
+            distance: Remaining energy of the UAV
             status: Status of the UAV (FREE or BUSY)
             min_speed: Minimum speed of the UAV
             max_speed: Maximum speed of the UAV
@@ -23,17 +23,20 @@ class UAV:
         FREE = 0
         BUSY = 1
 
-    def __init__(self, remain_energy, min_speed, max_speed, buffer_data, recent_position, image_path=None, recent_path=None, target_position=None):
+    def __init__(self, distance, is_blocked, time_charge, min_speed, max_speed, buffer_data, recent_position, image_path=None, recent_path=None, target_position=None):
         self.recent_position = recent_position
         self.recent_path = recent_path
         self.target_position = target_position
         self.status = self.UAVState.FREE
-        self.remain_energy = remain_energy
+        self.distance = distance
         self.min_speed = min_speed
         self.max_speed = max_speed
         self.direction = Vector(0, 0)
         self.buffer_data = buffer_data
         self.image_path = image_path
+        self.is_blocked = is_blocked
+        self.time_charge = time_charge
+        self.data = [[Map.DataState.NO_DATA for j in range(map_height)] for i in range(map_width)]
 
     def set_direction(self, vector):
         """
@@ -89,7 +92,7 @@ class UAV:
 
         if (map.state[int(x)][int(y)] == Map.CellState.NOT_SCANNED or map.state[int(x)][int(y)] == Map.CellState.SCANNING) and (abs(x - int(x) - 0.5) < 0.01 and abs(y - int(y) - 0.5) < 0.01):
             map.state[int(x)][int(y)] = Map.CellState.SCANNED
-
+            self.data[int(x)][int(y)] = Map.DataState.HAS_DATA
     def transmit_data(self):
         if self.buffer_data > 0:
             print("Transmitting data...")

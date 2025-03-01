@@ -74,6 +74,9 @@ class Map:
         SCANNED = 2
         UNREACHABLE = -1
         NO_INTEREST = 0
+    class DataState:
+        NO_DATA = 0
+        HAS_DATA = 1
 
     def __init__(self, aoi, num_of_obstacles, max_priority, uavs):
         self.aoi = aoi
