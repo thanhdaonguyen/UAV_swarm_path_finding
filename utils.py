@@ -381,7 +381,15 @@ def swarm_at_center(swarm, region_center):
 
 def select_target_cell(wavefront_map, current_position, map):
 
-    current_position = (current_position.x, current_position.y)
+    """
+        Find the nearest cell from the current position using Theta* algorithm
+        Args:
+            wavefront_map: 2D array representing the wavefront map
+            current_position: Tuple of current position (x, y)
+            map: Map object
+        Returns:
+            Tuple of nearest cell position (x, y) and the path to the cell
+    """
     
     def line_of_sight(map, start, end):
         x0, y0 = start
@@ -507,7 +515,7 @@ def select_target_cell(wavefront_map, current_position, map):
         while current != current_position:
             path.append(current)
             current = parent_map[current]
-        # path.append(current_position)
+        path.append(current_position)
         path.reverse()
 
     return cell, path

@@ -51,8 +51,6 @@ class UAV:
         x = int(self.recent_position.x // Parameters.cell_size)
         y = int(self.recent_position.y // Parameters.cell_size)
         return (x, y)
-
-
     
     def move_a_frame(self):
         """
