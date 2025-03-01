@@ -113,7 +113,7 @@ class Drawer:
             circle_centers.append((cir_centers[i][0], cir_centers[i][1]))
         self.draw_circles(circle_centers)
         self.draw_cluster_cells()
-        self.draw_wavefront_map(wavefront_map)
+        # self.draw_wavefront_map(wavefront_map)
         self.draw_grid()
         pygame.display.flip()
 

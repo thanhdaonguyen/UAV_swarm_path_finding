@@ -46,7 +46,8 @@ start_time = time.time()
 swarm = Swarm(uavs, clusters[0].center)
 FPS = FPS
 
-while running and current_cluster_index < len(clusters):
+# while running and current_cluster_index < len(clusters):
+while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_q):
             running = False

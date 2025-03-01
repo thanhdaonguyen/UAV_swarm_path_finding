@@ -153,7 +153,7 @@ class Map:
                 cell_coor_y = y * cell_size + cell_size // 2
                 radius = cell_radius * cell_size
                 
-                if (cell_coor_x - center_coor_x) ** 2 + (cell_coor_y - center_coor_y) ** 2 <= radius ** 2 and (map_state[x][y] == Map.CellState.NOT_SCANNED or map_state[x][y] == Map.CellState.SCANNING):
+                if (cell_coor_x - center_coor_x) ** 2 + (cell_coor_y - center_coor_y) ** 2 <= radius ** 2 and (map_state[x][y] == Map.CellState.NOT_SCANNED):
                     return False
 
         return True
