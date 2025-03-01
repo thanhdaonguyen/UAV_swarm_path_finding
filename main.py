@@ -6,7 +6,7 @@ from UAV import UAV
 from Swarm import Swarm
 from utils import wavefront
 import random
-from utils import bfs
+from utils import bfs, Cluster
 from Drawer import Drawer
 from utils import *
 import time
@@ -28,35 +28,36 @@ uav_index = 0                          # Chỉ số của UAV hiện tại (Dùn
 
 
 # Bước 2: Các bước tiền tính toán
-clusters_centers, clusters_available_cells = find_circle_centers_and_available_cells(map0)  # Tìm các tâm của các vùng cần quét
-clusters_priority = calculate_centroid_priority(map0, clusters_centers, 5, 5)  # Tính toán ưu tiên của các vùng cần quét
-
+clusters = calculate_centroid_priority(map0) #Tìm các clusters và ưu tiên của chúng 
 # Bước 3: Vòng lặp chính
-
+clusters_centers = []
+for cluster in clusters:
+    clusters_centers.append((int(cluster.center[0]), int(cluster.center[1])))
+clusters_available_cells = []
+for cluster in clusters:
+    clusters_available_cells.append(cluster.available_cells)
 running = True
 current_cluster_index = 0
 reached_center = False
 start_time = time.time()
-swarm = Swarm(uavs, Point(clusters_priority[0][0], clusters_priority[0][1]))
+swarm = Swarm(uavs, Point(clusters_centers[0][0], clusters_centers[0][1]))
 FPS = Parameters.FPS
 
-while running and current_cluster_index < len(clusters_priority):
+while running and current_cluster_index < len(clusters):
     for event in pygame.event.get():
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_q):
             running = False
-
     # Cập nhật tâm swarm cho khu vực hiện tại
-    current_cluster_center = Point(*clusters_priority[current_cluster_index])
+    current_cluster_center = Point(*clusters_centers[current_cluster_index])
     swarm.set_center(current_cluster_center)
     current_cluster_center_cell = Point(int(current_cluster_center.x // Parameters.cell_size), 
                                    int(current_cluster_center.y // Parameters.cell_size)
                                   )
-
     # Các UAV quét khu vực hiện tại
     if Map.is_cluster_scanned(map0.state, current_cluster_center, Parameters.radius):
         print(f"Region {current_cluster_index} scanned completely. Moving to next region.")
         current_cluster_index += 1
-        if current_cluster_index >= len(clusters_priority):
+        if current_cluster_index >= len(clusters):
             print("All regions scanned. Mission complete!")
             break
         
@@ -67,7 +68,7 @@ while running and current_cluster_index < len(clusters_priority):
             uav_cell_position = uav.get_cell_position()
 
             '''Lựa chọn cho các UAV tìm kiếm ô tiếp theo để quét dựa trên vị trí của cluster center hiện tại'''
-            cluster_map = create_cluster_map(map0, clusters_available_cells[clusters_priority[current_cluster_index]])
+            cluster_map = create_cluster_map(map0, clusters_available_cells[current_cluster_index])
             wavefront_map = wavefront((current_cluster_center_cell.x, current_cluster_center_cell.y), cluster_map)
             next_cell, shortest_path = select_target_cell(wavefront_map, uav_cell_position, cluster_map)
             '''Lựa chọn cho các UAV tìm kiếm ô tiếp theo để quét dựa trên vị trí hiện tại của UAV'''
@@ -80,6 +81,9 @@ while running and current_cluster_index < len(clusters_priority):
                 uav.recent_path = None
                 uav.target_position = None
                 uav.status = UAV.UAVState.FREE
+                centroid_scanned = map0.state[current_cluster_center_cell.x][current_cluster_center_cell.y]
+                print(centroid_scanned)
+                time.sleep(2)
             else:
                 uav.recent_path = shortest_path
                 uav.index_path = 0
@@ -88,10 +92,8 @@ while running and current_cluster_index < len(clusters_priority):
                 uav.target_position = Point(next_cell[0] * Parameters.cell_size + Parameters.cell_size // 2, 
                                             next_cell[1] * Parameters.cell_size + Parameters.cell_size // 2)
                 print(f"UAV moving to {next_cell} in cluster {current_cluster_index}")
-
     swarm.move_a_frame()
     swarm.scan(map0)
-    
     # Cập nhật trạng thái UAV sau khi di chuyển
     for uav in swarm.uavs:
         if uav.status == UAV.UAVState.BUSY and uav.recent_path and uav.index_path >= len(uav.recent_path):

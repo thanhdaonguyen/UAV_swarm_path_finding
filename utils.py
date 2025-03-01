@@ -14,6 +14,20 @@ class Point:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+class Cluster:
+    """
+        Cluster class to represent a cluster in the map
+        Attributes:
+            center: Point object representing the center of the cluster
+            available_cells: List of available cells in the cluster
+    """
+    def __init__(self, center, available_cells, priority_avg):
+        self.center = center
+        self.available_cells = available_cells
+        self.priority_avg = priority_avg
+    def distance_to(self, other):
+        """Tính khoảng cách Euclidean giữa hai cluster"""
+        return math.sqrt((self.center[0] - other.center[0])**2 + (self.center[1] - other.center[1])**2)
 
 class Vector:
     """
@@ -143,7 +157,7 @@ def find_circle_centers_and_available_cells(map):
     map = map.state
     radius = Parameters.radius * Parameters.cell_size
     centers = []
-    clusters_available_cells = {}
+    clusters=[]
     step_x = radius * math.sqrt(3)
     step_y = radius * 1.5
 
@@ -178,20 +192,24 @@ def find_circle_centers_and_available_cells(map):
     # Tính các ô thuộc phạm vi của các center:
     for center in centers:
         x, y = center
+        sum = 0
         available_cells = []
         for i in range(len(map)):
             for j in range(len(map[0])):
                 cell_coor_x = i * Parameters.cell_size + Parameters.cell_size / 2
                 cell_coor_y = j * Parameters.cell_size + Parameters.cell_size / 2
                 if (cell_coor_x - x) ** 2 + (cell_coor_y - y) ** 2 <= radius ** 2:
-                    available_cells.append((i, j))
-        clusters_available_cells[center] = available_cells  
-
+                    # available_cells.append((cell_coor_x, cell_coor_y))
+                    available_cells.append((i, j)) 
+                    sum += map[i][j]
+        priority_avg = sum / len(available_cells)
+        cluster = Cluster(center, available_cells, priority_avg)
+        clusters.append(cluster)
     # print(centers)
-    return (centers, clusters_available_cells)
+    return clusters
 
     
-def calculate_centroid_priority(map :Map, cen_circles, time_to_scan, time_to_move):
+def calculate_centroid_priority(map):
     '''
     map: array with 0,1 value
     cen_circles: array store center, center is a tuple (x, y)
@@ -203,32 +221,48 @@ def calculate_centroid_priority(map :Map, cen_circles, time_to_scan, time_to_mov
     Thời gian di chuyển: time_to_move + time_to_scan
     priority = [(tổng ưu tiên) / (tổng số ô)] / (khoảng cách)
     '''
-    priority_list = []
+    # priority_list = []
 
-    for center in cen_circles:
-        x, y = center
-        total_priority = 0
-        total_cells = 0
+    # for center in cen_circles:
+    #     x, y = center
+    #     total_priority = 0
+    #     total_cells = 0
         
-        for i in range(len(map.state)):
-            for j in range(len(map.state[0])):
-                cell_coor_x = i * Parameters.cell_size + Parameters.cell_size // 2
-                cell_coor_y = j * Parameters.cell_size + Parameters.cell_size // 2
-                radius = Parameters.radius * Parameters.cell_size
+    #     for i in range(len(map.state)):
+    #         for j in range(len(map.state[0])):
+    #             cell_coor_x = i * Parameters.cell_size + Parameters.cell_size // 2
+    #             cell_coor_y = j * Parameters.cell_size + Parameters.cell_size // 2
+    #             radius = Parameters.radius * Parameters.cell_size
                 
-                if (cell_coor_x - x) ** 2 + (cell_coor_y - y) ** 2 <= radius ** 2:
-                    total_priority += map.priority[i][j]
-                    total_cells += 1
+    #             if ((cell_coor_x - x) ** 2 + (cell_coor_y - y) ** 2 <= radius ** 2):
+    #                 total_priority += map.priority[i][j]
+    #                 total_cells += 1
 
-        total_time = time_to_move + time_to_scan
-        priority = total_priority / total_time if total_time > 0 else 0
-        priority_list.append((center, priority))
+    #     total_time = time_to_move + time_to_scan
+    #     priority = total_priority / total_time if total_time > 0 else 0
+    #     priority_list.append((center, priority))
 
-    priority_list.sort(key=lambda x: x[1], reverse=True)
-    # print(priority_list)
-    clusters_priority = [center for center, _ in priority_list]
+    # priority_list.sort(key=lambda x: x[1], reverse=True)
+    # # print(priority_list)
+    # clusters_priority = [center for center, _ in priority_list]
+    clusters = find_circle_centers_and_available_cells(map)
+    sorted_clusters = sorted(clusters, key=lambda cluster: cluster.priority_avg, reverse=True)
+    sorted_result = [sorted_clusters[0]]
+    remaining_clusters = sorted_clusters[1:]
 
-    return clusters_priority
+    while remaining_clusters:
+        prev_cluster = sorted_result[-1]
+        next_cluster = max(
+            remaining_clusters,
+            key=lambda c: c.priority_avg / prev_cluster.distance_to(c)
+        )
+        sorted_result.append(next_cluster)
+        remaining_clusters.remove(next_cluster)
+    return sorted_result #priority_list 
+    # priority_list = []
+    # for cluster in sorted_result:
+    #     priority_list.append(cluster.center)
+    # return priority_list #priority_list with only centers
 
 
 def swarm_at_center(swarm, region_center):
@@ -243,6 +277,155 @@ def swarm_at_center(swarm, region_center):
             return False
     print(f"All UAVs at center: {center_cell}")
     return True
+
+def select_target_cell(wavefront_map, current_position, map):
+
+    current_position = (current_position.x, current_position.y)
+    
+    def line_of_sight(map, start, end):
+        x0, y0 = start
+        x1, y1 = end
+        dx = abs(x1 - x0)
+        dy = abs(y1 - y0)
+        sx = 1 if x0 < x1 else -1
+        sy = 1 if y0 < y1 else -1
+        err = dx - dy
+
+        while (x0, y0) != (x1, y1):
+            if map.state[x0][y0] == Map.CellState.UNREACHABLE:
+                return False
+            e2 = 2 * err
+            if e2 > -dy:
+                err -= dy
+                x0 += sx
+            if e2 < dx:
+                err += dx
+                y0 += sy
+        return True
+
+    def heuristic(a, b):
+        """
+            Heuristic function to calculate the distance between two points
+            Args:
+                a: Tuple of point a (x, y)
+                b: Tuple of point b (x, y)
+            Returns:
+                Distance between two points
+        """
+        dx = a[0] - b[0]
+        dy = a[1] - b[1]
+        return (dx ** 2 + dy ** 2) ** 0.5
+
+    state_map = np.array(map.state)
+    rows, cols = state_map.shape
+    shortest_path_map = [[float('inf') for _ in range(cols)] for _ in range(rows)]
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    
+    def count_surround_not_NOT_SCANNED_cell(self, x, y):
+        """
+            Count the number of not NOT_SCANNED cell around the cell (x, y)
+            Args:
+                x: x-coordinate of the cell
+                y: y-coordinate of the cell
+            Returns:
+                Number of not NOT_SCANNED cell around the cell
+        """
+        count = 0;
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < rows and 0 <= ny < cols and state_map[nx][ny] != Map.CellState.NOT_SCANNED:
+                count += 1
+        return count
+
+    def bfs_condition(state_map, shortest_path_map, pos):
+        x, y = pos
+        return shortest_path_map[x][y] == float('inf') and state_map[x][y] != Map.CellState.UNREACHABLE
+
+    pq = []
+    heapq.heappush(pq, (0, current_position[0], current_position[1]))
+    shortest_path_map[current_position[0]][current_position[1]] = 0
+    parent_map = {current_position: current_position}
+    print("current_position", current_position)
+
+    min_cost = float('inf')
+    result = -1
+    cell = None
+    num_of_max_surround_cell = 0
+    while pq:
+        dist, x, y = heapq.heappop(pq)
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < rows and 0 <= ny < cols and bfs_condition(state_map, shortest_path_map, (nx, ny)):
+                if line_of_sight(map, parent_map[(x, y)], (nx, ny)):
+                    g_cost = shortest_path_map[x][y] + heuristic((x, y), (nx, ny))
+                    if g_cost < shortest_path_map[nx][ny]:
+                        shortest_path_map[nx][ny] = g_cost
+                        parent_map[(nx, ny)] = parent_map[(x, y)]
+                        if state_map[nx][ny] == Map.CellState.NOT_SCANNED:
+                            if result <= wavefront_map[nx][ny] and min_cost >= g_cost:
+                                if result == wavefront_map[nx][ny]:
+                                    num_of_surround_cell = count_surround_not_NOT_SCANNED_cell(map, nx, ny)
+                                    if num_of_max_surround_cell < num_of_surround_cell:
+                                        num_of_max_surround_cell = num_of_surround_cell
+                                        min_cost = g_cost
+                                        result = wavefront_map[nx][ny]
+                                        cell = (nx, ny)
+                                else:
+                                    num_of_max_surround_cell = 0
+                                    min_cost = g_cost
+                                    result = wavefront_map[nx][ny]
+                                    cell = (nx, ny)
+                        else:
+                            heapq.heappush(pq, (g_cost + heuristic((nx, ny), current_position), nx, ny))
+                else:
+                    g_cost = shortest_path_map[x][y] + 1
+                    if g_cost < shortest_path_map[nx][ny]:
+                        shortest_path_map[nx][ny] = g_cost
+                        parent_map[(nx, ny)] = (x, y)
+                        if state_map[nx][ny] == Map.CellState.NOT_SCANNED:
+                            if result <= wavefront_map[nx][ny] and min_cost >= g_cost:
+                                if result == wavefront_map[nx][ny]:
+                                    num_of_surround_cell = count_surround_not_NOT_SCANNED_cell(map, nx, ny)
+                                    if num_of_max_surround_cell < num_of_surround_cell:
+                                        num_of_max_surround_cell = num_of_surround_cell
+                                        min_cost = g_cost
+                                        result = wavefront_map[nx][ny]
+                                        cell = (nx, ny)
+                                else:
+                                    num_of_max_surround_cell = 0
+                                    min_cost = g_cost
+                                    result = wavefront_map[nx][ny]
+                                    cell = (nx, ny)
+                        else:
+                            heapq.heappush(pq, (g_cost + heuristic((nx, ny), current_position), nx, ny))
+    
+    # Reconstruct the path
+    path = []
+    if cell:
+        current = cell
+        while current != current_position:
+            path.append(current)
+            current = parent_map[current]
+        # path.append(current_position)
+        path.reverse()
+    return cell, path
+
+import copy
+def create_cluster_map(original_map, cluster_available_cells):
+    """
+    Create a map with the same size as the original map but only contains the available cells in the cluster
+    """
+
+    cluster_map = copy.deepcopy(original_map)
+    for x in range(len(cluster_map.state)):
+        for y in range(len(cluster_map.state[0])):
+            if (x, y) not in cluster_available_cells:
+                if cluster_map.state[x][y] == Map.CellState.UNREACHABLE:
+                    cluster_map.state[x][y] = Map.CellState.UNREACHABLE
+                else:
+                    cluster_map.state[x][y] = Map.CellState.NO_INTEREST 
+    
+    return cluster_map
 
 
 # def select_target_cell(wavefront_map, current_position, map):
