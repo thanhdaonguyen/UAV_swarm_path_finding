@@ -3,7 +3,7 @@ import heapq
 import numpy as np
 from Map import Map
 from input import *
-
+import random
 class Point:
     """
         Point class to represent a point in the map
@@ -641,7 +641,7 @@ def select_target_cell(wavefront_map, current_position, map):
             Returns:
                 Number of not NOT_SCANNED cell around the cell
         """
-        count = 0;
+        count = 0
         for dx, dy in directions:
             nx, ny = x + dx, y + dy
             if 0 <= nx < rows and 0 <= ny < cols and state_map[nx][ny] != Map.CellState.NOT_SCANNED:
@@ -752,3 +752,192 @@ def cal_distance_path(path):
     for i in range(1, len(path)):
         dis += ((path[i][0] - path[i-1][0])**2 + (path[i][1] - path[i-1][1]))**0.5
     return dis
+
+def find_path(source, target, map):
+    """
+    Find a path from source to target in the map, avoiding UNREACHABLE cells (-1)
+    Args:
+        source: Tuple of source position (x, y)
+        target: Tuple of target position (x, y)
+        map: Map object with state attribute (2D array)
+    Returns:
+        List of coordinates representing the path from source to target, or None if no path exists
+    """
+    
+    def heuristic(a, b):
+        """Calculate Euclidean distance between two points"""
+        dx = a[0] - b[0]
+        dy = a[1] - b[1]
+        return (dx ** 2 + dy ** 2) ** 0.5
+
+    # Chuyển map.state thành numpy array để dễ xử lý
+    state_map = np.array(map.state)
+    rows, cols = state_map.shape
+
+    # Kiểm tra tính hợp lệ của source và target
+    if (not (0 <= source[0] < rows and 0 <= source[1] < cols) or
+        not (0 <= target[0] < rows and 0 <= target[1] < cols) or
+        state_map[source] == -1 or state_map[target] == -1):
+        return None
+
+    # Các hướng di chuyển: lên, xuống, trái, phải
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+
+    # Khởi tạo các cấu trúc dữ liệu
+    g_score = [[float('inf') for _ in range(cols)] for _ in range(rows)]  # Chi phí từ source đến điểm hiện tại
+    g_score[source[0]][source[1]] = 0
+    f_score = [[float('inf') for _ in range(cols)] for _ in range(rows)]  # f = g + h
+    f_score[source[0]][source[1]] = heuristic(source, target)
+    parent_map = {source: None}  # Lưu đường đi
+    pq = [(f_score[source[0]][source[1]], source[0], source[1])]  # Hàng đợi ưu tiên
+
+    visited = set()  # Tập hợp các ô đã thăm
+
+    while pq:
+        _, x, y = heapq.heappop(pq)
+        current = (x, y)
+
+        # Đã đến đích
+        if current == target:
+            # Tái tạo đường đi
+            path = []
+            while current is not None:
+                path.append(current)
+                current = parent_map[current]
+            path.reverse()
+            return path
+
+        if current in visited:
+            continue
+        visited.add(current)
+
+        # Kiểm tra các ô lân cận
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            neighbor = (nx, ny)
+
+            # Kiểm tra giới hạn và tránh ô UNREACHABLE
+            if (0 <= nx < rows and 0 <= ny < cols and 
+                state_map[nx][ny] != -1):
+                # Chi phí từ current đến neighbor (giả sử chi phí đều là 1)
+                tentative_g_score = g_score[x][y] + 1
+
+                if tentative_g_score < g_score[nx][ny]:
+                    # Cập nhật chi phí và cha
+                    g_score[nx][ny] = tentative_g_score
+                    f_score[nx][ny] = tentative_g_score + heuristic(neighbor, target)
+                    parent_map[neighbor] = current
+                    heapq.heappush(pq, (f_score[nx][ny], nx, ny))
+
+    # Không tìm thấy đường đi
+    return None
+
+def select_target_cell1(current_position, map):
+    """
+    Find a random unscanned cell among the nearest ones to the current position using modified Theta*
+    Args:
+        wavefront_map: 2D array representing the wavefront map (not used in this version)
+        current_position: Tuple of current position (x, y)
+        map: Map object
+    Returns:
+        Tuple of selected cell position (x, y) and the path to the cell
+    """
+    
+    def line_of_sight(map, start, end):
+        x0, y0 = start
+        x1, y1 = end
+        dx = abs(x1 - x0)
+        dy = abs(y1 - y0)
+        sx = 1 if x0 < x1 else -1
+        sy = 1 if y0 < y1 else -1
+        err = dx - dy
+
+        while (x0, y0) != (x1, y1):
+            if map.state[x0][y0] == Map.CellState.UNREACHABLE:
+                return False
+            e2 = 2 * err
+            if e2 > -dy:
+                err -= dy
+                x0 += sx
+            if e2 < dx:
+                err += dx
+                y0 += sy
+        return True
+
+    def heuristic(a, b):
+        """Calculate Euclidean distance between two points"""
+        dx = a[0] - b[0]
+        dy = a[1] - b[1]
+        return (dx ** 2 + dy ** 2) ** 0.5
+
+    state_map = np.array(map.state)
+    rows, cols = state_map.shape
+    shortest_path_map = [[float('inf') for _ in range(cols)] for _ in range(rows)]
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    
+    def bfs_condition(state_map, shortest_path_map, pos):
+        x, y = pos
+        return (shortest_path_map[x][y] == float('inf') and 
+                state_map[x][y] != Map.CellState.UNREACHABLE)
+
+    # Danh sách các ô chưa được quét gần nhất
+    nearest_unscanned_cells = []
+    min_distance = float('inf')
+    
+    pq = []
+    heapq.heappush(pq, (0, current_position[0], current_position[1]))
+    shortest_path_map[current_position[0]][current_position[1]] = 0
+    parent_map = {current_position: None}
+
+    while pq:
+        dist, x, y = heapq.heappop(pq)
+        if nearest_unscanned_cells and dist > min_distance:
+            break
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < rows and 0 <= ny < cols and bfs_condition(state_map, shortest_path_map, (nx, ny)):
+                parent_pos = parent_map[(x, y)]
+                if parent_pos is not None and line_of_sight(map, parent_pos, (nx, ny)):
+                    g_cost = shortest_path_map[parent_pos[0]][parent_pos[1]] + heuristic(parent_pos, (nx, ny))
+                    new_parent = parent_pos
+                else:
+                    g_cost = shortest_path_map[x][y] + heuristic((x, y), (nx, ny))
+                    new_parent = (x, y)
+                    
+                if g_cost < shortest_path_map[nx][ny]:
+                    shortest_path_map[nx][ny] = g_cost
+                    parent_map[(nx, ny)] = new_parent
+                    
+                    if state_map[nx][ny] == Map.CellState.NOT_SCANNED:
+                        if g_cost < min_distance:
+                            nearest_unscanned_cells = [(nx, ny)]
+                            min_distance = g_cost
+                        elif g_cost == min_distance:
+                            nearest_unscanned_cells.append((nx, ny))
+                    elif g_cost <= min_distance:
+                        heapq.heappush(pq, (g_cost + heuristic((nx, ny), current_position), nx, ny))
+
+    selected_cell = None
+    if nearest_unscanned_cells:
+        selected_cell = random.choice(nearest_unscanned_cells)
+
+    path = []
+    if selected_cell:
+        current = selected_cell
+        while current is not None:  
+            path.append(current)
+            current = parent_map[current]
+        path.reverse()
+
+    path_to_charge = []
+    cell_charge = (10, 10)
+    if cell_charge in parent_map:
+        current = cell_charge
+        while current is not None:
+            path_to_charge.append(current)
+            current = parent_map[current]
+        path_to_charge.reverse()
+    else:
+        path_to_charge = find_path(current_position, cell_charge, map)
+
+    return selected_cell, path, path_to_charge

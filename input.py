@@ -21,6 +21,6 @@ cell_radius = 5
 uav_distance = 130
 time_charge = 300
 
-min_speed = [120, 140, 160]
-max_speed = [130, 150, 170]
+min_speed = [100, 120, 140]
+max_speed = [120, 140, 160]
 dis_threshold = 100
