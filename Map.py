@@ -78,35 +78,10 @@ class Map:
         NO_DATA = 0
         HAS_DATA = 1
 
-    def __init__(self, aoi, num_of_obstacles, max_priority, uavs):
-        self.aoi = aoi
-        self.num_of_obstacles = num_of_obstacles
-        self.priority = [[0 for j in range(map_height)] for i in range(map_width)]
-        self.state = [[Map.CellState.NO_INTEREST for j in range(map_height)] for i in range(map_width)]
+    def __init__(self, state, priority):
+        self.priority = priority
+        self.state = state
         self.cluster_cells = []
-
-        for x in range(map_width):
-            for y in range(map_height):
-                if is_point_in_polygon(x, y, aoi):
-                    self.state[x][y] = Map.CellState.NOT_SCANNED 
-                else:
-                    self.state[x][y] = Map.CellState.NO_INTEREST
-
-        
-        all_points = [(x, y) for x in range(map_width) for y in range(map_height)]
-        points = random.sample(all_points, num_of_obstacles)
-        for x, y in points:
-            for uav in uavs:
-                if (x, y) == uav.get_cell_position():
-                    break
-            self.state[x][y] = Map.CellState.UNREACHABLE
-
-        for x in range(map_width):
-            for y in range(map_height):
-                if self.state[x][y] == Map.CellState.NOT_SCANNED:
-                    self.priority[x][y] = random.randint(1, max_priority)
-
-
 
     def top_left_corner_of_the_cell(self, x, y):
         """

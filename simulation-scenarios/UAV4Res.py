@@ -17,14 +17,14 @@ import time
 
 
 
-
+num_of_uavs = len(min_speed)
 # Bước 1: Khởi tạo các thực thể, biến đếm
 drawer = Drawer("UAV4Res")                       # Khởi tạo đối tượng Drawer
 uavs = []                               # Khởi tạo danh sách các UAVs
 for i in range(num_of_uavs):
     uavs.append(UAV(uav_distance.real, 0, time_charge, min_speed[i], max_speed[i], None, Point(*uav_start), "./images/uav.png"))
 swarm = Swarm(uavs, Point(605, 445))   # Khởi tạo đội Swarm
-map0 = Map(aoi, num_of_obstacles, 10, uavs) # Khởi tạo đối tượng Map
+map0 = Map(state, priority) # Khởi tạo đối tượng Map
 # wavefront_map = wavefront((uav_end[0] // cell_size, uav_end[1] // cell_size), map0)
 # wavefront_map = None
 uav_index = 0                          # Chỉ số của UAV hiện tại (Dùng để chọn UAV trong đội)
