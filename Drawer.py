@@ -29,7 +29,9 @@ class Drawer:
         elif mode == "UAV4Res":
             pygame.display.set_caption("UAV4Res simulation")
             os.environ['SDL_VIDEO_WINDOW_POS'] = "900,100"  # Change "800,100" to your desired position
-        
+        else :
+            pygame.display.set_caption("Random UAV simulation")
+            os.environ['SDL_VIDEO_WINDOW_POS'] = "100,600"
         self.window = pygame.display.set_mode((map_width * cell_size, map_height * cell_size))
         self.font = pygame.font.SysFont('Arial', 12)
         self.window.fill(Drawer.Color.WHITE)
@@ -105,7 +107,7 @@ class Drawer:
                     pygame.draw.circle(self.window, Drawer.Color.CYAN, (x * cell_size + cell_size // 4, y * cell_size + cell_size // 4), 10 * int(wavefront_map[x][y]) / max_value)
                 
 
-    def draw_all(self, map, swarm, cir_centers, wavefront_map):
+    def draw_all(self, map, swarm, cir_centers, wavefront_map=None):
         """
             Draw the map and the swarm on the window
             Args:
