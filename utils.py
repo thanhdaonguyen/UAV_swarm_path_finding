@@ -297,9 +297,7 @@ def swarm_at_center(swarm, region_center):
     print(f"All UAVs at center: {center_cell}")
     return True
 
-def select_target_cell(wavefront_map, current_position, map):
-
-    current_position = (current_position.x, current_position.y)
+def select_target_cell2(wavefront_map, current_position, map):
     
     def line_of_sight(map, start, end):
         x0, y0 = start
