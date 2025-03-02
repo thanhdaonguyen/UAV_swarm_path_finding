@@ -18,7 +18,7 @@ class Drawer:
         MAGENTA = (255, 0, 255)
         GRAY = (180, 180, 180)
 
-    def __init__(self, mode):
+    def __init__(self, mode, map_width, map_height, cell_size):
         pygame.init()
         pygame.font.init()
 
@@ -37,7 +37,7 @@ class Drawer:
         self.window.fill(Drawer.Color.WHITE)
         self.clock = pygame.time.Clock()
 
-    def draw_map(self, map):
+    def draw_map(self, map, cell_size):
         """
             Draw the map on the window
             Args:
@@ -54,12 +54,12 @@ class Drawer:
         for x in range(len(map.state)):
             for y in range(len(map.state[x])):
                 text_surface = self.font.render(str(map.priority[x][y]), True, (0, 0, 0))
-                cell_top_left_point = map.top_left_corner_of_the_cell(x, y)
+                cell_top_left_point = map.top_left_corner_of_the_cell(x, y, cell_size)
                 pygame.draw.rect(self.window, cell_color[map.state[x][y]], (cell_top_left_point.x, cell_top_left_point.y, cell_size, cell_size))
                 text_rect = text_surface.get_rect(center=(cell_top_left_point.x + cell_size // 2, cell_top_left_point.y + cell_size // 2))
                 self.window.blit(text_surface, text_rect)
 
-    def draw_grid(self):
+    def draw_grid(self, map_width, map_height, cell_size):
         """
             Draw the grid on the window
         """
@@ -68,7 +68,7 @@ class Drawer:
         for y in range(0, map_height):
             pygame.draw.line(self.window, (200, 200, 200), (0, y * cell_size), (map_width * cell_size, y * cell_size))
 
-    def draw_swarm(self, swarm):
+    def draw_swarm(self, swarm, cell_size):
         """
             Draw the swarm on the window
             Args:
@@ -85,16 +85,16 @@ class Drawer:
             else:
                 pygame.draw.circle(self.window, Drawer.Color.BLUE, (uav.recent_position.x, uav.recent_position.y), 5)
 
-    def draw_circles(self, centers):
+    def draw_circles(self, centers, cell_size, cell_radius):
         for center in centers:
             pygame.draw.circle(self.window, Drawer.Color.BLUE, center, int(cell_radius*cell_size), 1)
 
-    def draw_cluster_cells(self):
+    def draw_cluster_cells(self, cell_size):
         # print(Map.cluster_cells)
         for x, y in Map.cluster_cells:
             pygame.draw.circle(self.window, Drawer.Color.MAGENTA, (x * cell_size + cell_size // 2, y * cell_size + cell_size // 2), 3)
 
-    def draw_wavefront_map(self, wavefront_map):
+    def draw_wavefront_map(self, wavefront_map, cell_size):
         """
             Draw the wavefront map on the window
             Args:
@@ -107,7 +107,7 @@ class Drawer:
                     pygame.draw.circle(self.window, Drawer.Color.CYAN, (x * cell_size + cell_size // 4, y * cell_size + cell_size // 4), 10 * int(wavefront_map[x][y]) / max_value)
                 
 
-    def draw_all(self, map, swarm, cir_centers, wavefront_map=None):
+    def draw_all(self, map, swarm, cir_centers, map_width, map_height, cell_size, cell_radius, wavefront_map=None):
         """
             Draw the map and the swarm on the window
             Args:
@@ -115,15 +115,15 @@ class Drawer:
                 swarm: Swarm object
         """
         self.window.fill(Drawer.Color.WHITE)
-        self.draw_map(map)
-        self.draw_swarm(swarm)
+        self.draw_map(map, cell_size)
+        self.draw_swarm(swarm, cell_size)
         circle_centers = []
         for i in range(len(cir_centers)):
             circle_centers.append((cir_centers[i][0], cir_centers[i][1]))
-        self.draw_circles(circle_centers)
-        self.draw_cluster_cells()
+        self.draw_circles(circle_centers, cell_size, cell_radius)
+        self.draw_cluster_cells(cell_size)
         # self.draw_wavefront_map(wavefront_map)
-        self.draw_grid()
+        self.draw_grid(map_width, map_height, cell_size)
         pygame.display.flip()
 
     

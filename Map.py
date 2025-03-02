@@ -1,6 +1,5 @@
 from enum import Enum
 import random
-from input import *
 random.seed(1)
 
 
@@ -77,7 +76,7 @@ class Map:
         NO_DATA = 0
         HAS_DATA = 1
 
-    def __init__(self, aoi, num_of_obstacles, obstacles, map, uavs):
+    def __init__(self, aoi, num_of_obstacles, obstacles, map, uavs, map_width, map_height):
         self.aoi = aoi
         self.num_of_obstacles = num_of_obstacles
         self.priority = [[map[1][i][j] for j in range(map_height)] for i in range(map_width)]
@@ -88,7 +87,7 @@ class Map:
 
 
 
-    def top_left_corner_of_the_cell(self, x, y):
+    def top_left_corner_of_the_cell(self, x, y, cell_size):
         """
             Args:
                 x: x-coordinate of the cell in the map
@@ -98,7 +97,7 @@ class Map:
         """
         return Point(x * cell_size, y * cell_size)
 
-    def get_cell_position(self, point):
+    def get_cell_position(self, point, cell_size):
         """
             Args:
                 point: Point object
@@ -108,7 +107,7 @@ class Map:
         return (point.x // cell_size, point.y // cell_size) 
                     
     @classmethod
-    def is_cluster_scanned(cls, map_state, cluster_center, cell_radius):
+    def is_cluster_scanned(cls, map_state, cluster_center, cell_radius, cell_size):
         """
         Check if the region within radius around cluster_center is fully scanned.
         """

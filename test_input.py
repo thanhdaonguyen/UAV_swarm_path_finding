@@ -38,7 +38,6 @@ def generate_map(map_width, map_height, aoi, max_priority):
                 priority_map[x][y] = random.randint(1, max_priority)
 
     return state_map, priority_map
-
 #==============================MAP======================================#
 aoi_1 = [(6, 6), (12, 14), (20, 15), (29, 14), (32, 9), (28, 5), (21, 3), (13, 4)]
 num_of_obstacles_1 = 30

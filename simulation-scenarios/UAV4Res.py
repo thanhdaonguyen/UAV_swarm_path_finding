@@ -6,7 +6,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import pygame
 import sys
-from input import *
 from Map import Map, is_point_in_polygon
 from UAV import UAV
 from Swarm import Swarm
@@ -15,17 +14,16 @@ from Drawer import Drawer
 from utils import *
 import time
 from test_input import *
-
-
+from input import *
 
 # Bước 1: Khởi tạo các thực thể, biến đếm
-drawer = Drawer("UAV4Res")                       # Khởi tạo đối tượng Drawer
+drawer = Drawer("UAV4Res", map_width_1, map_height_1, cell_size_1)                       # Khởi tạo đối tượng Drawer
 uavs = []                               # Khởi tạo danh sách các UAVs
 # obstacles_1 = generate_obstacles(num_of_obstacles_1, map_width_1, map_height_1)
-for i in range(num_of_uavs):
-    uavs.append(UAV(uav_distance.real, 0, time_charge, min_speed[i], max_speed[i], None, Point(*uav_start), "./images/uav.png"))
+for i in range(num_of_uavs_1):
+    uavs.append(UAV(map_width_1, map_height_1,uav_distance.real, 0, time_charge, min_speed_1[i], max_speed_1[i], None, Point(*uav_start), "./images/uav.png"))
 swarm = Swarm(uavs, Point(605, 445))   # Khởi tạo đội Swarm
-map0 = Map(aoi, num_of_obstacles, obstacles_1, map_1, uavs) # Khởi tạo đối tượng Map
+map0 = Map(aoi_1, num_of_obstacles_1, obstacles_1, map_1, uavs,map_width_1, map_height_1) # Khởi tạo đối tượng Map
 print(len(map_1[0]))
 # wavefront_map = wavefront((uav_end[0] // cell_size_1, uav_end[1] // cell_size_1), map0)
 # wavefront_map = None
@@ -59,7 +57,7 @@ while running:
                                         int(clusters[current_cluster_index].end_of_cluster[1] // cell_size_1))
 
     # Các UAV quét khu vực hiện tại
-    if Map.is_cluster_scanned(map0.state, current_cluster_center, cell_radius):
+    if Map.is_cluster_scanned(map0.state, current_cluster_center, cell_radius_1, cell_size_1):
         print(f"Region {current_cluster_index} scanned completely. Moving to next region.")
         if current_cluster_index < len(clusters) - 1:
             current_cluster_index += 1
@@ -78,7 +76,7 @@ while running:
                 uav.distance= uav_distance
                 uav.time_charge = time_charge
         if (uav.status == UAV.UAVState.FREE or (uav.status == UAV.UAVState.BUSY and uav.recent_path is None)) and not uav.is_blocked:
-            uav_cell_position = uav.get_cell_position()
+            uav_cell_position = uav.get_cell_position(cell_size_1)
 
             '''Lựa chọn cho các UAV tìm kiếm ô tiếp theo để quét dựa trên vị trí của cluster center hiện tại'''
             cluster_map = create_cluster_map(map0, clusters[current_cluster_index].available_cells)
@@ -110,15 +108,16 @@ while running:
                         uav.index_path = 0
                         uav.recent_path = path_to_charge
                         uav.target_position = Point(10*cell_size_1 + cell_size_1//2, 10*cell_size_1 + cell_size_1//2)
-    swarm.move_a_frame()
-    swarm.scan(map0)
+    swarm.move_a_frame(cell_size_1)
+    swarm.scan(map0, cell_size_1)
     # Cập nhật trạng thái UAV sau khi di chuyển
     for uav in swarm.uavs:
         if uav.status == UAV.UAVState.BUSY and uav.recent_path and uav.index_path >= len(uav.recent_path):
             uav.recent_path = None
             uav.target_position = None
             uav.status = UAV.UAVState.FREE
-    drawer.draw_all(map0, swarm, clusters_centers, wavefront_map)
+    drawer.draw_all(map0, swarm, clusters_centers, map_width_1, map_height_1, cell_size_1, cell_radius_1, wavefront_map)
+    
     drawer.clock.tick(FPS)
 # Kết thúc
 drawer.kill_window()

@@ -1,7 +1,6 @@
 from UAV import UAV
 from utils import Point, Vector
 import random
-from input import *
 
 class Swarm:
     """
@@ -24,23 +23,23 @@ class Swarm:
         """
         self.center = point
     
-    def get_center_cell_position(self):
+    def get_center_cell_position(self, cell_size):
         """
             Returns:
                 Tuple of cell position (x, y) of the center of the swarm
         """
         return (self.center.x // cell_size, self.center.y // cell_size)
 
-    def move_a_frame(self):
+    def move_a_frame(self, cell_size):
         """
             Move the swarm a frame
         """
         for uav in self.uavs:
-            uav.move_a_frame()
+            uav.move_a_frame(cell_size)
 
-    def scan(self, map):
+    def scan(self, map, cell_size):
         for uav in self.uavs:
-            uav.scan(map)
+            uav.scan(map, cell_size)
 
     def __repr__(self):
         return f"Swarm(posX={self.center.x}, posY={self.center.y}, formation={self.formation}, uavs={self.uavs})"
