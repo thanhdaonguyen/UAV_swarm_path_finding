@@ -14,25 +14,27 @@ import random
 from Drawer import Drawer
 from utils import *
 import time
-
+from test_input import *
 
 
 
 # Bước 1: Khởi tạo các thực thể, biến đếm
 drawer = Drawer("UAV4Res")                       # Khởi tạo đối tượng Drawer
 uavs = []                               # Khởi tạo danh sách các UAVs
+# obstacles_1 = generate_obstacles(num_of_obstacles_1, map_width_1, map_height_1)
 for i in range(num_of_uavs):
     uavs.append(UAV(uav_distance.real, 0, time_charge, min_speed[i], max_speed[i], None, Point(*uav_start), "./images/uav.png"))
 swarm = Swarm(uavs, Point(605, 445))   # Khởi tạo đội Swarm
-map0 = Map(aoi, num_of_obstacles, 10, uavs) # Khởi tạo đối tượng Map
-# wavefront_map = wavefront((uav_end[0] // cell_size, uav_end[1] // cell_size), map0)
+map0 = Map(aoi, num_of_obstacles, obstacles_1, map_1, uavs) # Khởi tạo đối tượng Map
+print(len(map_1[0]))
+# wavefront_map = wavefront((uav_end[0] // cell_size_1, uav_end[1] // cell_size_1), map0)
 # wavefront_map = None
 uav_index = 0                          # Chỉ số của UAV hiện tại (Dùng để chọn UAV trong đội)
 
 
 # Bước 2: Các bước tiền tính toán
 
-clusters = calculate_centroid_priority(map0)  # Tính toán ưu tiên của các vùng cần quét
+clusters = calculate_centroid_priority(map0, map_height_1, map_width_1, cell_radius_1, cell_size_1)    # Tính toán ưu tiên của các vùng cần quét
 clusters_centers = []
 for cluster in clusters:
     clusters_centers.append((int(cluster.center[0]), int(cluster.center[1])))
@@ -53,8 +55,8 @@ while running:
     # Cập nhật tâm swarm cho khu vực hiện tại
     current_cluster_center = Point(clusters[current_cluster_index].center[0], clusters[current_cluster_index].center[1])
     swarm.set_center(current_cluster_center)
-    current_cluster_end_cell = Point(int(clusters[current_cluster_index].end_of_cluster[0] // cell_size), 
-                                        int(clusters[current_cluster_index].end_of_cluster[1] // cell_size))
+    current_cluster_end_cell = Point(int(clusters[current_cluster_index].end_of_cluster[0] // cell_size_1), 
+                                        int(clusters[current_cluster_index].end_of_cluster[1] // cell_size_1))
 
     # Các UAV quét khu vực hiện tại
     if Map.is_cluster_scanned(map0.state, current_cluster_center, cell_radius):
@@ -97,8 +99,8 @@ while running:
                 uav.index_path = 0
                 uav.status = UAV.UAVState.BUSY
                 map0.state[next_cell[0]][next_cell[1]] = Map.CellState.SCANNING
-                uav.target_position = Point(next_cell[0] * cell_size + cell_size // 2, 
-                                            next_cell[1] * cell_size + cell_size // 2)
+                uav.target_position = Point(next_cell[0] * cell_size_1 + cell_size_1 // 2, 
+                                            next_cell[1] * cell_size_1 + cell_size_1 // 2)
                 dis = cal_distance_path(uav.recent_path)
                 uav.distance -= dis
                 print(f"UAV moving to {next_cell} in cluster {current_cluster_index}")
@@ -107,7 +109,7 @@ while running:
                         uav.is_blocked = 1
                         uav.index_path = 0
                         uav.recent_path = path_to_charge
-                        uav.target_position = Point(10*cell_size + cell_size//2, 10*cell_size + cell_size//2)
+                        uav.target_position = Point(10*cell_size_1 + cell_size_1//2, 10*cell_size_1 + cell_size_1//2)
     swarm.move_a_frame()
     swarm.scan(map0)
     # Cập nhật trạng thái UAV sau khi di chuyển

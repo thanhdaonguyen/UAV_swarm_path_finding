@@ -2,7 +2,6 @@ from collections import deque
 import heapq
 import numpy as np
 from Map import Map
-from input import *
 import random
 class Point:
     """
@@ -137,7 +136,7 @@ def wavefront(goal, map):
 
 import math
 
-def have_cells_to_scan(center, map):
+def have_cells_to_scan(center, map, cell_radius, cell_size):
     """
     Check if there are cells to scan around the center of the region.
     """
@@ -154,14 +153,13 @@ def have_cells_to_scan(center, map):
     return False
     
 
-def find_circle_centers_and_available_cells(map):
+def find_circle_centers_and_available_cells(map, map_height, map_width, cell_radius, cell_size):
     map = map.state
     radius = cell_radius * cell_size
     centers = []
     clusters=[]
     step_x = radius * math.sqrt(3)
     step_y = radius * 1.5
-
     # Xác định phạm vi chứa số 1
     xmin, ymin = map_height, map_width
     for i in range(len(map)):  
@@ -169,7 +167,7 @@ def find_circle_centers_and_available_cells(map):
             if map[i][j] == Map.CellState.NOT_SCANNED:
                 xmin = min(xmin, i)
                 ymin = min(ymin, j)
-
+    
     
     # Duyệt theo dạng lưới lục giác
     # Chuyển các giới hạn x, y về dạng toạ độ trên canvas
@@ -182,13 +180,12 @@ def find_circle_centers_and_available_cells(map):
     y = ymin
     while y <= ymax + radius:
         while x <= xmax + radius:
-            if have_cells_to_scan((x, y), map):
+            if have_cells_to_scan((x, y), map, cell_radius, cell_size):
                 centers.append((x, y))
             x += step_x
         y += step_y
         x = xmin + step_x / 2 if ((y - ymin) / step_y) % 2 == 1 else xmin
         print("hahaahaha", (x - xmin) % step_x)
-    
 
     # Tính các ô thuộc phạm vi của các center:
     for center in centers:
@@ -210,7 +207,7 @@ def find_circle_centers_and_available_cells(map):
     return clusters
 
     
-def calculate_centroid_priority(map):
+def calculate_centroid_priority(map, map_height, map_width, cell_radius, cell_size):
     '''
     map: array with 0,1 value
     cen_circles: array store center, center is a tuple (x, y)
@@ -246,7 +243,7 @@ def calculate_centroid_priority(map):
     # priority_list.sort(key=lambda x: x[1], reverse=True)
     # # print(priority_list)
     # clusters_priority = [center for center, _ in priority_list]
-    clusters = find_circle_centers_and_available_cells(map)
+    clusters = find_circle_centers_and_available_cells(map, map_height, map_width, cell_radius, cell_size)
     sorted_clusters = sorted(clusters, key=lambda cluster: cluster.priority_avg, reverse=True)
     sorted_result = [sorted_clusters[0]]
     remaining_clusters = sorted_clusters[1:]
@@ -284,7 +281,7 @@ def calculate_centroid_priority(map):
     # return priority_list #priority_list with only centers
 
 
-def swarm_at_center(swarm, region_center):
+def swarm_at_center(swarm, region_center, cell_size):
     """
     Check if all UAVs in the swarm are at the center of the region.
     """
@@ -755,7 +752,7 @@ def cal_distance_path(path):
 
 def find_path(source, target, map):
     """
-    Find a path from source to target in the map, avoiding UNREACHABLE cells (-1)
+    Find a path from source to target in the map using Theta*, avoiding UNREACHABLE cells (-1)
     Args:
         source: Tuple of source position (x, y)
         target: Tuple of target position (x, y)
@@ -769,6 +766,30 @@ def find_path(source, target, map):
         dx = a[0] - b[0]
         dy = a[1] - b[1]
         return (dx ** 2 + dy ** 2) ** 0.5
+
+    def line_of_sight(map, start, end):
+        """Check if there is a clear line of sight between start and end"""
+        x0, y0 = start
+        x1, y1 = end
+        dx = abs(x1 - x0)
+        dy = abs(y1 - y0)
+        sx = 1 if x0 < x1 else -1
+        sy = 1 if y0 < y1 else -1
+        err = dx - dy
+
+        while True:
+            if map.state[x0][y0] == -1:  # UNREACHABLE
+                return False
+            if (x0, y0) == (x1, y1):
+                break
+            e2 = 2 * err
+            if e2 > -dy:
+                err -= dy
+                x0 += sx
+            if e2 < dx:
+                err += dx
+                y0 += sy
+        return True
 
     # Chuyển map.state thành numpy array để dễ xử lý
     state_map = np.array(map.state)
@@ -819,14 +840,23 @@ def find_path(source, target, map):
             # Kiểm tra giới hạn và tránh ô UNREACHABLE
             if (0 <= nx < rows and 0 <= ny < cols and 
                 state_map[nx][ny] != -1):
-                # Chi phí từ current đến neighbor (giả sử chi phí đều là 1)
-                tentative_g_score = g_score[x][y] + 1
+                # Theta*: Kiểm tra line-of-sight từ cha của current đến neighbor
+                parent_pos = parent_map[current]
+                if parent_pos is not None and line_of_sight(map, parent_pos, neighbor):
+                    # Tính chi phí từ cha của current đến neighbor
+                    tentative_g_score = (g_score[parent_pos[0]][parent_pos[1]] + 
+                                       heuristic(parent_pos, neighbor))
+                    new_parent = parent_pos
+                else:
+                    # Không có line-of-sight, dùng current làm cha
+                    tentative_g_score = g_score[x][y] + heuristic(current, neighbor)
+                    new_parent = current
 
                 if tentative_g_score < g_score[nx][ny]:
                     # Cập nhật chi phí và cha
                     g_score[nx][ny] = tentative_g_score
                     f_score[nx][ny] = tentative_g_score + heuristic(neighbor, target)
-                    parent_map[neighbor] = current
+                    parent_map[neighbor] = new_parent
                     heapq.heappush(pq, (f_score[nx][ny], nx, ny))
 
     # Không tìm thấy đường đi
