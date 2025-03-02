@@ -24,18 +24,27 @@ def generate_map(map_width, map_height, aoi, max_priority):
     """Tạo bản đồ trạng thái và mảng ưu tiên."""
     state_map = [[None] * map_height for _ in range(map_width)]
     priority_map = [[0] * map_height for _ in range(map_width)]
-
+    xmin = map_width
+    xmax = 0
+    ymin = map_width
+    ymax = 0
     for x in range(map_width):
         for y in range(map_height):
             if is_point_in_polygon(x, y, aoi):
                 state_map[x][y] = Map.CellState.NOT_SCANNED
+                if x <= xmin: xmin = x
+                if x >= xmax: xmax = x
+                if y <= ymin: ymin = y
+                if y >= ymax: ymax = y
             else:
                 state_map[x][y] = Map.CellState.NO_INTEREST
-
     for x in range(map_width):
         for y in range(map_height):
             if state_map[x][y] == Map.CellState.NOT_SCANNED:
-                priority_map[x][y] = random.randint(1, max_priority)
+                if x >= xmin + (xmax - xmin)*4/10 and x <= xmin + (xmax - xmin)*6/10 and y >= ymin + (ymax - ymin)*2/10 and y <= ymin + (ymax - ymin)**3/10:
+                    priority_map[x][y] = random.randint(max_priority, max_priority + 10)
+                else:
+                    priority_map[x][y] = random.randint(1, 5)
 
     return state_map, priority_map
 #==============================MAP======================================#
