@@ -9,21 +9,21 @@ print("Màu đỏ: Obstacle, Màu trắng: Unscanned, màu xám: no interest, nu
 # Nhập số hàng và cột từ terminal
 ROWS = int(input("Nhập số lượng hàng: "))
 COLS = int(input("Nhập số lượng cột: "))
-CELL_SIZE = 40  # Kích thước ô
+CELL_SIZE = 20  # Kích thước ô
 WIDTH, HEIGHT = COLS * CELL_SIZE, ROWS * CELL_SIZE
 
-#####################################
-num_of_uavs = int(input("Nhập số lượng uavs: "))
-cell_radius = int(input("Nhập cell_radius: "))
-uav_distance = int(input("Nhập uav_distance: "))
-time_charge = int(input("Nhập time_charge: "))
-min_speed = []
-max_speed = []
-for i in range(num_of_uavs):
-    min_speed.append(int(input(f"Nhập min_speed uav thứ {i}: ")))
-    max_speed.append(int(input(f"Nhập max_speed uav thứ {i}: ")))
-dis_threshold = int(input("Nhập dis_threshold: "))
-######################################
+# #####################################
+# num_of_uavs = int(input("Nhập số lượng uavs: "))
+# cell_radius = int(input("Nhập cell_radius: "))
+# uav_distance = int(input("Nhập uav_distance: "))
+# time_charge = int(input("Nhập time_charge: "))
+# min_speed = []
+# max_speed = []
+# for i in range(num_of_uavs):
+#     min_speed.append(int(input(f"Nhập min_speed uav thứ {i}: ")))
+#     max_speed.append(int(input(f"Nhập max_speed uav thứ {i}: ")))
+# dis_threshold = int(input("Nhập dis_threshold: "))
+# ######################################
 
 
 # Màu sắc
@@ -68,24 +68,24 @@ def write_to_input():
             states[y][x] = changer[grid[x][y]]
             priority[y][x] = values[x][y]
     
-    selected_green = (selected_green[1], selected_green[0])
-    selected_blue = (selected_blue[1], selected_blue[0])
+    selected_green_temp = (selected_green[1], selected_green[0])
+    selected_blue_temp = (selected_blue[1], selected_blue[0])
     
     f = open("input.py", "w")
     f.write(f"state = {states}\n")
-    f.write(f"uav_start = {selected_green}\n")
-    f.write(f"base = {selected_blue}\n")
+    f.write(f"uav_start = {selected_green_temp}\n")
+    f.write(f"base = {selected_blue_temp}\n")
     f.write(f"priority = {priority}\n")
     f.write(f"map_width = {COLS}\n")
     f.write(f"map_height = {ROWS}\n")
     f.write(f"cell_size = {20}\n")
     f.write(f"FPS = {60}\n")
-    f.write(f"cell_radius = {cell_radius}\n")
-    f.write(f"uav_distance = {uav_distance}\n")
-    f.write(f"time_charge = {time_charge}\n")
-    f.write(f"min_speed = {min_speed}\n")
-    f.write(f"max_speed = {max_speed}\n")
-    f.write(f"dis_threshold = {dis_threshold}\n")
+    # f.write(f"cell_radius = {cell_radius}\n")
+    # f.write(f"uav_distance = {uav_distance}\n")
+    # f.write(f"time_charge = {time_charge}\n")
+    # f.write(f"min_speed = {min_speed}\n")
+    # f.write(f"max_speed = {max_speed}\n")
+    # f.write(f"dis_threshold = {dis_threshold}\n")
 
     f.close()
     

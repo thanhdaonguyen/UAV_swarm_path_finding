@@ -718,14 +718,16 @@ def select_target_cell(wavefront_map, current_position, map):
         path.append(current_position)
         path.reverse()
     path_to_charge = []
-    cell_charge = (10, 10)
-    if cell_charge:
+    cell_charge = base
+    if cell_charge in parent_map:
         current = cell_charge
         while current != current_position:
             path_to_charge.append(current)
             current = parent_map[current]
         path_to_charge.append(current_position)
         path_to_charge.reverse()
+    else:
+        path_to_charge = find_path(current_position, cell_charge, map)
     return cell, path, path_to_charge
 
 import copy
@@ -751,84 +753,87 @@ def cal_distance_path(path):
         dis += ((path[i][0] - path[i-1][0])**2 + (path[i][1] - path[i-1][1]))**0.5
     return dis
 
+def line_of_sight(map, start, end):
+    """Checks if there is a clear line of sight between two points in the grid."""
+    x0, y0 = start
+    x1, y1 = end
+    dx, dy = abs(x1 - x0), abs(y1 - y0)
+    sx, sy = (1 if x1 > x0 else -1), (1 if y1 > y0 else -1)
+    
+    err = dx - dy
+    while (x0, y0) != (x1, y1):
+        if map.state[x0][y0] == -1:
+            return False
+        e2 = err * 2
+        if e2 > -dy:
+            err -= dy
+            x0 += sx
+        if e2 < dx:
+            err += dx
+            y0 += sy
+    return map.state[x1][y1] != -1
+
+def heuristic(a, b):
+    """Calculate the Euclidean distance heuristic."""
+    return math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
+
 def find_path(source, target, map):
     """
-    Find a path from source to target in the map, avoiding UNREACHABLE cells (-1)
+    Find a path from source to target in the map using Theta* algorithm.
+    Avoids UNREACHABLE cells (-1).
+    
     Args:
         source: Tuple of source position (x, y)
         target: Tuple of target position (x, y)
         map: Map object with state attribute (2D array)
-    Returns:
-        List of coordinates representing the path from source to target, or None if no path exists
-    """
     
-    def heuristic(a, b):
-        """Calculate Euclidean distance between two points"""
-        dx = a[0] - b[0]
-        dy = a[1] - b[1]
-        return (dx ** 2 + dy ** 2) ** 0.5
+    Returns:
+        List of coordinates representing the path from source to target, or None if no path exists.
+    """
+    rows, cols = len(map.state), len(map.state[0])
+    
+    if map.state[source[0]][source[1]] == -1 or map.state[target[0]][target[1]] == -1:
+        return None  # If source or target is unreachable
 
-    # Chuyển map.state thành numpy array để dễ xử lý
-    state_map = np.array(map.state)
-    rows, cols = state_map.shape
+    # Priority queue for Theta*
+    open_set = []
+    heapq.heappush(open_set, (0, source))  # (priority, node)
 
-    # Kiểm tra tính hợp lệ của source và target
-    if (not (0 <= source[0] < rows and 0 <= source[1] < cols) or
-        not (0 <= target[0] < rows and 0 <= target[1] < cols) or
-        state_map[source] == -1 or state_map[target] == -1):
-        return None
+    came_from = {source: None}  # To reconstruct the path
+    g_score = {source: 0}  # Cost from start to this node
+    f_score = {source: heuristic(source, target)}  # Estimated cost from start to goal
 
-    # Các hướng di chuyển: lên, xuống, trái, phải
-    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    directions = [(0, 1), (1, 0), (0, -1), (-1, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)]  # 8 directions
 
-    # Khởi tạo các cấu trúc dữ liệu
-    g_score = [[float('inf') for _ in range(cols)] for _ in range(rows)]  # Chi phí từ source đến điểm hiện tại
-    g_score[source[0]][source[1]] = 0
-    f_score = [[float('inf') for _ in range(cols)] for _ in range(rows)]  # f = g + h
-    f_score[source[0]][source[1]] = heuristic(source, target)
-    parent_map = {source: None}  # Lưu đường đi
-    pq = [(f_score[source[0]][source[1]], source[0], source[1])]  # Hàng đợi ưu tiên
+    while open_set:
+        _, current = heapq.heappop(open_set)
 
-    visited = set()  # Tập hợp các ô đã thăm
-
-    while pq:
-        _, x, y = heapq.heappop(pq)
-        current = (x, y)
-
-        # Đã đến đích
-        if current == target:
-            # Tái tạo đường đi
+        if current == target:  # Reached the target, reconstruct path
             path = []
             while current is not None:
                 path.append(current)
-                current = parent_map[current]
-            path.reverse()
-            return path
+                current = came_from[current]
+            return path[::-1]  # Return reversed path
 
-        if current in visited:
-            continue
-        visited.add(current)
-
-        # Kiểm tra các ô lân cận
         for dx, dy in directions:
-            nx, ny = x + dx, y + dy
-            neighbor = (nx, ny)
+            neighbor = (current[0] + dx, current[1] + dy)
 
-            # Kiểm tra giới hạn và tránh ô UNREACHABLE
-            if (0 <= nx < rows and 0 <= ny < cols and 
-                state_map[nx][ny] != -1):
-                # Chi phí từ current đến neighbor (giả sử chi phí đều là 1)
-                tentative_g_score = g_score[x][y] + 1
+            if 0 <= neighbor[0] < rows and 0 <= neighbor[1] < cols and map.state[neighbor[0]][neighbor[1]] != -1:
+                # Use line-of-sight optimization
+                if came_from[current] and line_of_sight(map, came_from[current], neighbor):
+                    tentative_g_score = g_score[came_from[current]] + heuristic(came_from[current], neighbor)
+                    better_parent = came_from[current]
+                else:
+                    tentative_g_score = g_score[current] + heuristic(current, neighbor)
+                    better_parent = current
 
-                if tentative_g_score < g_score[nx][ny]:
-                    # Cập nhật chi phí và cha
-                    g_score[nx][ny] = tentative_g_score
-                    f_score[nx][ny] = tentative_g_score + heuristic(neighbor, target)
-                    parent_map[neighbor] = current
-                    heapq.heappush(pq, (f_score[nx][ny], nx, ny))
+                if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
+                    came_from[neighbor] = better_parent
+                    g_score[neighbor] = tentative_g_score
+                    f_score[neighbor] = tentative_g_score + heuristic(neighbor, target)
+                    heapq.heappush(open_set, (f_score[neighbor], neighbor))
 
-    # Không tìm thấy đường đi
-    return None
+    return None  # No path found
 
 def select_target_cell1(current_position, map):
     """
@@ -928,7 +933,7 @@ def select_target_cell1(current_position, map):
         path.reverse()
 
     path_to_charge = []
-    cell_charge = (10, 10)
+    cell_charge = base
     if cell_charge in parent_map:
         current = cell_charge
         while current is not None:

@@ -1,7 +1,10 @@
 import time
 
 class Measurer:
-    def __init__(self):
+    def __init__(self, type, num_of_uavs, map):
+        self.num_of_uavs = num_of_uavs
+        self.map = map
+        self.type = type
         self.time = 0
         self.cost = 0
         self.initial_time = 0
@@ -9,18 +12,17 @@ class Measurer:
         self.recent_data = 0
         self.data = [{0: 0}] 
     
-    def set_initial_time(self):
-        self.initial_time = time.time()
-    
-    def get_time(self):
-        self.time = time.time() - self.initial_time
+    def tick_time(self):
+        self.time += 1/60
 
     def add_cost(self, priority):
-        self.cost += (time.time() - self.initial_time) * priority
+        self.cost += self.time * priority
 
     def get_data(self, data):
         self.recent_data += data
-        self.data.append({time.time() - self.initial_time: self.recent_data}) 
+        self.data.append({self.time: self.recent_data}) 
 
     def print(self):
-        print(f"time = {self.time}, cost = {self.cost}, data = \n {self.data}")
+        f = open("output.txt", "a")
+        f.write(f"type = {self.type}, time = {self.time}, cost = {self.cost}, data = \n {self.data}\n")
+        f.close()

@@ -14,10 +14,11 @@ import random
 from Drawer import Drawer
 from utils import *
 import time
-
+from Measurer import Measurer
 
 
 num_of_uavs = len(min_speed)
+measurer = Measurer(type = "tsunami", num_of_uavs = num_of_uavs, map = maptype)
 # Bước 1: Khởi tạo các thực thể, biến đếm
 drawer = Drawer("tsunami")                       # Khởi tạo đối tượng Drawer
 uavs = []                               # Khởi tạo danh sách các UAVs
@@ -45,7 +46,6 @@ reached_center = False
 start_time = time.time()
 swarm = Swarm(uavs, clusters[0].center)
 FPS = FPS
-
 # while running and current_cluster_index < len(clusters):
 while running:
     for event in pygame.event.get():
@@ -61,11 +61,12 @@ while running:
     # Các UAV quét khu vực hiện tại
     if Map.is_cluster_scanned(map0.state, current_cluster_center, cell_radius):
         print(f"Region {current_cluster_index} scanned completely. Moving to next region.")
-        if current_cluster_index < len(clusters) - 1:
+        if current_cluster_index <= len(clusters) - 1:
             current_cluster_index += 1
         if current_cluster_index >= len(clusters):
             print("All regions scanned. Mission complete!")
-            # break
+            measurer.print()
+            break
         
         
     
@@ -80,6 +81,7 @@ while running:
                 uav.time_charge = time_charge
         if (uav.status == UAV.UAVState.FREE or (uav.status == UAV.UAVState.BUSY and uav.recent_path is None)) and not uav.is_blocked:
             uav_cell_position = uav.get_cell_position()
+            measurer.add_cost(map0.priority[uav_cell_position[0]][uav_cell_position[1]])
             '''Lựa chọn cho các UAV tìm kiếm ô tiếp theo để quét dựa trên vị trí của cluster center hiện tại'''
             # cluster_map = create_cluster_map(map0, clusters[current_cluster_index].available_cells)
             wavefront_map = wavefront((map_width - 1, map_height - 1), map0)
@@ -87,7 +89,7 @@ while running:
             '''Lựa chọn cho các UAV tìm kiếm ô tiếp theo để quét dựa trên vị trí hiện tại của UAV'''
             # wavefront_map = wavefront((uav_cell_position[0], uav_cell_position[1]), map0)
             # next_cell, shortest_path = select_target_cell(wavefront_map, Point(uav_cell_position[0], uav_cell_position[1]), map0)
-            print('path:', shortest_path)
+            #print('path:', shortest_path)
             
             if next_cell is None: 
                 print(f"UAV at {uav_cell_position}: No reachable cell in region {current_cluster_index}")
@@ -103,14 +105,14 @@ while running:
                                             next_cell[1] * cell_size + cell_size // 2)
                 dis = cal_distance_path(uav.recent_path)
                 uav.distance -= dis
-                print(f"UAV moving to {next_cell} in cluster {current_cluster_index}")
+                #print(f"UAV moving to {next_cell} in cluster {current_cluster_index}")
                 if uav.distance.real < dis_threshold:
                         map0.state[next_cell[0]][next_cell[1]] = Map.CellState.NOT_SCANNED
                         uav.is_blocked = 1
                         uav.index_path = 0
                         uav.recent_path = path_to_charge
                         uav.target_position = Point(10*cell_size + cell_size//2, 10*cell_size + cell_size//2)
-
+    measurer.tick_time()
     swarm.move_a_frame()
     swarm.scan(map0)
     
