@@ -17,7 +17,6 @@ import time
 from Measurer import Measurer
 
 
-num_of_uavs = len(min_speed)
 measurer = Measurer(type = "tsunami", num_of_uavs = num_of_uavs, map = maptype)
 # Bước 1: Khởi tạo các thực thể, biến đếm
 drawer = Drawer("tsunami")                       # Khởi tạo đối tượng Drawer
@@ -45,7 +44,6 @@ current_cluster_index = 0
 reached_center = False
 start_time = time.time()
 swarm = Swarm(uavs, clusters[0].center)
-FPS = FPS
 # while running and current_cluster_index < len(clusters):
 while running:
     for event in pygame.event.get():

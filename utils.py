@@ -199,7 +199,7 @@ def find_circle_centers_and_available_cells(map):
             for j in range(len(map[0])):
                 cell_coor_x = i * cell_size + cell_size / 2
                 cell_coor_y = j * cell_size + cell_size / 2
-                if (cell_coor_x - x) ** 2 + (cell_coor_y - y) ** 2 <= radius ** 2:
+                if (cell_coor_x - x) ** 2 + (cell_coor_y - y) ** 2 <= radius ** 2 and map[i][j] == Map.CellState.NOT_SCANNED:
                     # available_cells.append((cell_coor_x, cell_coor_y))
                     available_cells.append((i, j)) 
                     sum += map[i][j]
@@ -258,6 +258,7 @@ def calculate_centroid_priority(map):
         next_cluster = max(
             remaining_clusters,
             key=lambda c: c.priority_avg / prev_cluster.distance_to(c)
+            # key=lambda c: c.priority_avg 
         )
         sorted_result.append(next_cluster)
         remaining_clusters.remove(next_cluster)

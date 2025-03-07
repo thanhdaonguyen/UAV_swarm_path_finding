@@ -1,6 +1,10 @@
-type = randomUAV, time = 14.866666666666985, cost = 61442.16666666735, data = 
+type = randomUAV, num_of_uavs = 7, time = 62.449999999997736, cost = 313435.79999999324, data = 
  [{0: 0}]
-type = tsunami, time = 15.400000000000345, cost = 66017.50000000079, data = 
+type = tsunami, num_of_uavs = 7, time = 57.71666666666467, cost = 277947.6499999949, data = 
  [{0: 0}]
-type = UAV4Res, time = 29.733333333332926, cost = 108303.3333333339, data = 
+type = UAV4Res, num_of_uavs = 7, time = 81.56666666666332, cost = 367707.18333332276, data = 
+ [{0: 0}]
+type = UAV4Res, num_of_uavs = 7, time = 25.5166666666665, cost = 119930.7833333344, data = 
+ [{0: 0}]
+type = tsunami, num_of_uavs = 7, time = 57.71666666666467, cost = 277947.6499999949, data = 
  [{0: 0}]

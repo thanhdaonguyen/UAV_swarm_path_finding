@@ -24,5 +24,5 @@ class Measurer:
 
     def print(self):
         f = open("output.txt", "a")
-        f.write(f"type = {self.type}, time = {self.time}, cost = {self.cost}, data = \n {self.data}\n")
+        f.write(f"type = {self.type}, num_of_uavs = {self.num_of_uavs}, time = {self.time}, cost = {self.cost}, data = \n {self.data}\n")
         f.close()

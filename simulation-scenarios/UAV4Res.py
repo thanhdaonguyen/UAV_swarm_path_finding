@@ -17,7 +17,6 @@ import time
 from Measurer import Measurer
 
 
-num_of_uavs = len(min_speed)
 measurer = Measurer(type = "UAV4Res", num_of_uavs = num_of_uavs, map = maptype)
 # Bước 1: Khởi tạo các thực thể, biến đếm
 drawer = Drawer("UAV4Res")                       # Khởi tạo đối tượng Drawer

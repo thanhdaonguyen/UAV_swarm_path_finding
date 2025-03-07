@@ -18,7 +18,6 @@ from algorithm import *
 from Measurer import Measurer
 
 
-num_of_uavs = len(min_speed)
 measurer = Measurer(type = "randomUAV", num_of_uavs = num_of_uavs, map = maptype)
 # Bước 1: Khởi tạo các thực thể, biến đếm
 drawer = Drawer("random")                       # Khởi tạo đối tượng Drawer

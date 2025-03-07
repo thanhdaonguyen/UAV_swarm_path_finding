@@ -132,8 +132,14 @@ def handle_mouse_draw(row, col):
                 nr, nc = row + dr, col + dc
                 if 0 <= nr < ROWS and 0 <= nc < COLS:
                     grid[nr][nc] = WHITE
+                    values[nr][nc] = 1
     elif draw_mode == 3 and grid[row][col] == WHITE:  # Chỉ thay đổi giá trị nếu ô là màu trắng
-        values[row][col] = current_value
+        
+        for dr in range(-1, 2):
+            for dc in range(-1, 2):
+                nr, nc = row + dr, col + dc
+                if 0 <= nr < ROWS and 0 <= nc < COLS:
+                    values[nr][nc] = current_value
     elif draw_mode == 4:
         selected_green = (row, col)  # Chỉ chọn một ô màu xanh lá
     elif draw_mode == 5:
