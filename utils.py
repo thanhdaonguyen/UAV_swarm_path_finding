@@ -105,7 +105,7 @@ def wavefront(goal, map):
     
     def bfs_condition(state_map, result, pos):
         x, y = pos
-        return state_map[x][y] != Map.CellState.UNREACHABLE and result[x][y] == -1
+        return state_map[x][y] == Map.CellState.NOT_SCANNED and result[x][y] == -1
 
     pq = []
     heapq.heappush(pq, (0, goal[0], goal[1]))
@@ -120,18 +120,22 @@ def wavefront(goal, map):
                 heapq.heappush(pq, (dist + 1, nx, ny))
     
     result = np.array(result, dtype=np.float32)
-    # max_value_wavefront = max(result.flatten())
+    max_value_wavefront = max(result.flatten())
 
     # for i in range(rows):
     #     for j in range(cols):
     #         if state_map[i][j] != Map.CellState.UNREACHABLE:
     #             # print(state_map[x][y])
     #             result[i][j] = max_value_wavefront - result[i][j]
+    # f = open("output.txt", 'w')
+    # f.write(str(result.tolist()))
+    # f.write("\n")
 
-    # if max(np.array(map.priority).flatten()) != 0:
-        # result += 1
-        # result += np.array(map.priority) * max(result.flatten()) / max(np.array(map.priority).flatten())
+    if max(np.array(map.priority).flatten()) != 0:
+        result += 1
+        result += np.array(map.priority) * max(result.flatten()) / max(np.array(map.priority).flatten())
 
+    # f.write(str(result.tolist()))
 
     return result
 

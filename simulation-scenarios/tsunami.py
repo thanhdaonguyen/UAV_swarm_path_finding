@@ -22,7 +22,7 @@ measurer = Measurer(type = "tsunami", num_of_uavs = num_of_uavs, map = maptype)
 drawer = Drawer("tsunami")                       # Khởi tạo đối tượng Drawer
 uavs = []                               # Khởi tạo danh sách các UAVs
 for i in range(num_of_uavs):
-    uavs.append(UAV(uav_distance.real, 0, time_charge,  min_speed[i], max_speed[i], None, Point(*uav_start), "./images/uav.png"))
+    uavs.append(UAV(uav_distance.real, 0, time_charge, min_speed[i], max_speed[i], None, Point(*uav_start), "./images/uav.png"))
 swarm = Swarm(uavs, Point(605, 445))   # Khởi tạo đội Swarm
 map0 = Map(state, priority) # Khởi tạo đối tượng Map
 # wavefront_map = wavefront((uav_end[0] // cell_size, uav_end[1] // cell_size), map0)
@@ -32,17 +32,39 @@ uav_index = 0                          # Chỉ số của UAV hiện tại (Dùn
 
 # Bước 2: Các bước tiền tính toán
 
+def distant(a, b):
+    return math.sqrt((a[0] - a[1]) ** 2 + (b[0] - b[1]) ** 2) 
+
 clusters = calculate_centroid_priority(map0)  # Tính toán ưu tiên của các vùng cần quét
 clusters_centers = []
 for cluster in clusters:
     clusters_centers.append((int(cluster.center[0]), int(cluster.center[1])))
 
 # Bước 3: Vòng lặp chính
+# check = False
+# for x in range(len(map0.state) -1, -1, -1):
+#     for y in range(len(map0.state[0]) -1, -1, -1):
+#         if map0.state[x][y] == map0.CellState.NOT_SCANNED:
+#             #print(x, y)
+#             goal = (x, y)
+#             check = True
+#             break
+#     if check:
+#         break
+
+ma_dis = 0
+goal = (0, 0)
+
+for x in range(len(map0.state)):
+    for y in range(len(map0.state[0])):
+        if map0.state[x][y] == map0.CellState.NOT_SCANNED:
+            if distant((x, y), goal) > ma_dis:
+                ma_dis = distant((x, y), goal)
+                goal = (x, y)
 
 running = True
 current_cluster_index = 0
 reached_center = False
-start_time = time.time()
 swarm = Swarm(uavs, clusters[0].center)
 FPS = FPS
 # while running and current_cluster_index < len(clusters):
@@ -67,7 +89,6 @@ while running:
             measurer.print()
             break
         
-        
     
     # Phân công UAV quét trong khu vực
     for uav in swarm.uavs:
@@ -81,8 +102,7 @@ while running:
         if (uav.status == UAV.UAVState.FREE or (uav.status == UAV.UAVState.BUSY and uav.recent_path is None)) and not uav.is_blocked:
             uav_cell_position = uav.get_cell_position()
             '''Lựa chọn cho các UAV tìm kiếm ô tiếp theo để quét dựa trên vị trí của cluster center hiện tại'''
-            # cluster_map = create_cluster_map(map0, clusters[current_cluster_index].available_cells)
-            wavefront_map = wavefront((map_width - 1, map_height - 1), map0)
+            wavefront_map = wavefront(goal, map0)
             next_cell, shortest_path, path_to_charge = select_target_cell(wavefront_map, uav_cell_position, map0)
             '''Lựa chọn cho các UAV tìm kiếm ô tiếp theo để quét dựa trên vị trí hiện tại của UAV'''
             # wavefront_map = wavefront((uav_cell_position[0], uav_cell_position[1]), map0)
@@ -101,7 +121,7 @@ while running:
                 map0.state[next_cell[0]][next_cell[1]] = Map.CellState.SCANNING
                 uav.target_position = Point(next_cell[0] * cell_size + cell_size // 2, 
                                             next_cell[1] * cell_size + cell_size // 2)
-                #dis = cal_distance_path(uav.recent_path)
+                # dis = cal_distance_path(uav.recent_path)
                 # uav.distance -= dis
                 # #print(f"UAV moving to {next_cell} in cluster {current_cluster_index}")
                 # if uav.distance.real < dis_threshold:
@@ -114,16 +134,13 @@ while running:
     swarm.move_a_frame()
     priority_total, priority_count = swarm.scan(map0)
     measurer.add_cost(priority_total)
-    
     # Cập nhật trạng thái UAV sau khi di chuyển
     for uav in swarm.uavs:
         if uav.status == UAV.UAVState.BUSY and uav.recent_path and uav.index_path >= len(uav.recent_path):
             uav.recent_path = None
             uav.target_position = None
             uav.status = UAV.UAVState.FREE
-
     drawer.draw_all(map0, swarm, clusters_centers, wavefront_map)
     drawer.clock.tick(FPS)
-
 # Kết thúc
 drawer.kill_window()

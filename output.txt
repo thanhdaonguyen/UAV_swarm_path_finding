@@ -1,8 +1,8 @@
-type = tsunami, time = 52.98333333333161, cost = 5745.424279377934, data = 
- [{0: 0}]
 type = randomUAV, time = 59.89999999999788, cost = 6083.735422725312, data = 
  [{0: 0}]
-type = UAV4Res, time = 88.63333333332959, cost = 7308.436591602676, data = 
+type = tsunami, time = 60.64999999999784, cost = 5494.280055939343, data = 
+ [{0: 0}]
+type = UAV4Res, time = 94.74999999999591, cost = 8540.333271404308, data = 
  [{0: 0}]
 type = randomUAVCluster, time = 100.23333333332893, cost = 8805.916630707023, data = 
  [{0: 0}]
