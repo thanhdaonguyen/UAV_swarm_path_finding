@@ -39,8 +39,14 @@ class Swarm:
             uav.move_a_frame()
 
     def scan(self, map):
+        priority_total = 0
+        priority_count = 0
         for uav in self.uavs:
-            uav.scan(map)
+            priority = uav.scan(map)
+            if priority != -1:
+                priority_total += priority
+                priority_count += 1;
+        return priority_total, priority_count
 
     def __repr__(self):
         return f"Swarm(posX={self.center.x}, posY={self.center.y}, formation={self.formation}, uavs={self.uavs})"

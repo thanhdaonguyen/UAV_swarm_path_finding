@@ -18,10 +18,9 @@ from algorithm import *
 from Measurer import Measurer
 
 
-num_of_uavs = len(min_speed)
 measurer = Measurer(type = "randomUAV", num_of_uavs = num_of_uavs, map = maptype)
 # Bước 1: Khởi tạo các thực thể, biến đếm
-drawer = Drawer("random")                       # Khởi tạo đối tượng Drawer
+drawer = Drawer("randomUAV")                       # Khởi tạo đối tượng Drawer
 uavs = []                               # Khởi tạo danh sách các UAVs
 for i in range(num_of_uavs):
     uavs.append(UAV(uav_distance.real, 0, time_charge,  min_speed[i], max_speed[i], None, Point(*uav_start), "./images/uav.png"))
@@ -81,13 +80,13 @@ while running:
                 uav.time_charge = time_charge
         if (uav.status == UAV.UAVState.FREE or (uav.status == UAV.UAVState.BUSY and uav.recent_path is None)) and not uav.is_blocked:
             uav_cell_position = uav.get_cell_position()
-            measurer.add_cost(map0.priority[uav_cell_position[0]][uav_cell_position[1]])
+            # measurer.add_cost(map0.priority[uav_cell_position[0]][uav_cell_position[1]])
             '''Lựa chọn cho các UAV tìm kiếm ô tiếp theo để quét dựa trên vị trí của cluster center hiện tại'''
             # cluster_map = create_cluster_map(map0, clusters[current_cluster_index].available_cells)
             next_cell, shortest_path, path_to_charge = select_target_cell1(uav_cell_position, map0)
             #print(shortest_path)
             if next_cell is None: 
-                print(f"UAV at {uav_cell_position}: No reachable cell in region {current_cluster_index}")
+                #print(f"UAV at {uav_cell_position}: No reachable cell in region {current_cluster_index}")
                 uav.recent_path = None
                 uav.target_position = None
                 uav.status = UAV.UAVState.FREE
@@ -98,19 +97,21 @@ while running:
                 map0.state[next_cell[0]][next_cell[1]] = Map.CellState.SCANNING
                 uav.target_position = Point(next_cell[0] * cell_size + cell_size // 2, 
                                             next_cell[1] * cell_size + cell_size // 2)
-                dis = cal_distance_path(uav.recent_path)
-                uav.distance -= dis
-                #print(f"UAV moving to {next_cell} in cluster {current_cluster_index}")
-                if uav.distance.real < dis_threshold:
-                        map0.state[next_cell[0]][next_cell[1]] = Map.CellState.NOT_SCANNED
-                        uav.is_blocked = 1
-                        uav.index_path = 0
-                        uav.recent_path = path_to_charge
-                        uav.target_position = Point(10*cell_size + cell_size//2, 10*cell_size + cell_size//2)
+                #dis = cal_distance_path(uav.recent_path)
+                # uav.distance -= dis
+                # #print(f"UAV moving to {next_cell} in cluster {current_cluster_index}")
+                # if uav.distance.real < dis_threshold:
+                #         map0.state[next_cell[0]][next_cell[1]] = Map.CellState.NOT_SCANNED
+                #         uav.is_blocked = 1
+                #         uav.index_path = 0
+                #         uav.recent_path = path_to_charge
+                #         uav.target_position = Point(10*cell_size + cell_size//2, 10*cell_size + cell_size//2)
 
     measurer.tick_time()
     swarm.move_a_frame()
-    swarm.scan(map0)
+    priority_total, priority_count = swarm.scan(map0)
+    measurer.add_cost(priority_total)
+    #print(f"add {measurer.cost}")
     
     # Cập nhật trạng thái UAV sau khi di chuyển
     for uav in swarm.uavs:

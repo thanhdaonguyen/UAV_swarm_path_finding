@@ -1,12 +1,13 @@
 import time
 
 class Measurer:
-    def __init__(self, type, num_of_uavs, map):
+    def __init__(self, type, num_of_uavs = None, map = None):
         self.num_of_uavs = num_of_uavs
         self.map = map
         self.type = type
         self.time = 0
         self.cost = 0
+        self.reward_point = 0
         self.initial_time = 0
         # data: [{time: amount of data}]
         self.recent_data = 0
@@ -16,7 +17,10 @@ class Measurer:
         self.time += 1/60
 
     def add_cost(self, priority):
-        self.cost += self.time * priority
+        if priority != 0:
+            self.cost +=  self.time / priority
+            #print(self.time)
+            self.reward_point += priority / self.time
 
     def get_data(self, data):
         self.recent_data += data

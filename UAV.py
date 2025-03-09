@@ -70,7 +70,8 @@ class UAV:
                 dist = (dx ** 2 + dy ** 2) ** 0.5
                 if dist == 0:  # Nếu UAV gần điểm đích, chuyển sang điểm tiếp theo
                     if self.index_path == len(self.recent_path) - 1:
-                        self.status = self.UAVState.FREE
+                        if self.is_blocked != 1:
+                            self.status = self.UAVState.FREE
                         self.direction = (0, 0)
                         self.recent_path = None
                     self.index_path += 1
@@ -93,6 +94,10 @@ class UAV:
         if (map.state[int(x)][int(y)] == Map.CellState.NOT_SCANNED or map.state[int(x)][int(y)] == Map.CellState.SCANNING) and (abs(x - int(x) - 0.5) < 0.01 and abs(y - int(y) - 0.5) < 0.01):
             map.state[int(x)][int(y)] = Map.CellState.SCANNED
             self.data[int(x)][int(y)] = Map.DataState.HAS_DATA
+            return map.priority[int(x)][int(y)]
+        else:
+            return -1
+    
     def transmit_data(self):
         if self.buffer_data > 0:
             print("Transmitting data...")
