@@ -120,22 +120,49 @@ def wavefront(goal, map):
                 heapq.heappush(pq, (dist + 1, nx, ny))
     
     result = np.array(result, dtype=np.float32)
+    priority = (np.array(map.priority) * max(result.flatten()) / max(np.array(map.priority).flatten()))
     max_value_wavefront = max(result.flatten())
 
-    # for i in range(rows):
-    #     for j in range(cols):
-    #         if state_map[i][j] != Map.CellState.UNREACHABLE:
-    #             # print(state_map[x][y])
-    #             result[i][j] = max_value_wavefront - result[i][j]
+    def distance(a, b):
+        return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+    sum_matrix = np.zeros((result.shape[0] * 2 + 1, result.shape[1] * 2 + 1))
+
+    for i in range(sum_matrix.shape[0]):
+        for j in range(sum_matrix.shape[1]):
+            sum_matrix[i, j] = distance((i, j), (result.shape[0] + 1, result.shape[1] + 1)) + 1
+
+    #print(sum_matrix.tolist())
+    # (matrix[shape(0) - result_shape(0) - i:, shape(0) - result_shape(0) - i:] * priority).sum()
+
+    check = False
+    for i in range(rows):
+        for j in range(cols):
+            if state_map[i][j] != Map.CellState.NOT_SCANNED:
+                start_point_x = sum_matrix.shape[0] - result.shape[0] - i
+                start_point_y = sum_matrix.shape[1] - result.shape[1] - j
+                #print(i, j, sum_matrix[start_point_x: start_point_x + result.shape[0], start_point_y:start_point_y + result.shape[1]])
+                result[i][j] += (sum_matrix[start_point_x: start_point_x + result.shape[0], start_point_y:start_point_y + result.shape[1]] * priority).sum()
+        #         check = True
+        #         break
+        # if check:
+        #     break
+                # print(state_map[x][y])
+                
     # f = open("output.txt", 'w')
     # f.write(str(result.tolist()))
     # f.write("\n")
 
-    if max(np.array(map.priority).flatten()) != 0:
-        result += 1
-        result += np.array(map.priority) * max(result.flatten()) / max(np.array(map.priority).flatten())
 
+    #result = (result + 1) * np.array(map.priority)
     # f.write(str(result.tolist()))
+    # f.write("\n")
+
+    # if max(np.array(map.priority).flatten()) != 0:
+    #     result += 1
+    #     result += 0.1 * (np.array(map.priority) * max(result.flatten()) / max(np.array(map.priority).flatten()))
+
+    #f.write(str(result.tolist()))
 
     return result
 

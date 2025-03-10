@@ -33,7 +33,7 @@ uav_index = 0                          # Chỉ số của UAV hiện tại (Dùn
 # Bước 2: Các bước tiền tính toán
 
 def distant(a, b):
-    return math.sqrt((a[0] - a[1]) ** 2 + (b[0] - b[1]) ** 2) 
+    return abs(a[0] - b[0]) + abs(a[1] - b[1]) 
 
 clusters = calculate_centroid_priority(map0)  # Tính toán ưu tiên của các vùng cần quét
 clusters_centers = []
@@ -58,7 +58,7 @@ goal = (0, 0)
 for x in range(len(map0.state)):
     for y in range(len(map0.state[0])):
         if map0.state[x][y] == map0.CellState.NOT_SCANNED:
-            if distant((x, y), goal) > ma_dis:
+            if distant((x, y), goal) >= ma_dis:
                 ma_dis = distant((x, y), goal)
                 goal = (x, y)
 
