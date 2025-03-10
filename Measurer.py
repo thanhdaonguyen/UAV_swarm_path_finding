@@ -18,7 +18,7 @@ class Measurer:
 
     def add_cost(self, priority):
         if priority != 0:
-            self.cost +=  self.time / priority
+            self.cost +=  self.time * priority
             #print(self.time)
             self.reward_point += priority / self.time
 

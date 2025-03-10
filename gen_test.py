@@ -111,6 +111,8 @@ def draw_grid():
 def draw_mode_text():
     text = font.render(f"Mode: {mode_names[draw_mode]}", True, (255, 255, 255))
     screen.blit(text, (10, 10))
+    text = font.render(f"count: {current_value}", True, (255, 255, 255))
+    screen.blit(text, (200, 10))
 
 def handle_mouse_draw(row, col):
     global selected_green, selected_blue
@@ -143,6 +145,9 @@ def handle_mouse_draw(row, col):
 running = True
 mouse_pressed = False
 
+speed = 3
+cnt = 0;
+
 while running:
     screen.fill(DARK_GRAY)  # Đặt màu nền là xám đậm
     draw_grid()
@@ -154,10 +159,6 @@ while running:
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_q:
                 draw_mode = (draw_mode + 1) % 6  # Chuyển chế độ vẽ
-            elif event.key == pygame.K_a and draw_mode == 3:
-                current_value = max(0, current_value - 1)  # Giảm giá trị
-            elif event.key == pygame.K_s and draw_mode == 3:
-                current_value += 1  # Tăng giá trị
             elif event.key == pygame.K_RETURN:
                 write_to_input()
                 running = False
@@ -165,7 +166,18 @@ while running:
             mouse_pressed = True
         elif event.type == pygame.MOUSEBUTTONUP:
             mouse_pressed = False
-    
+
+        key_input = pygame.key.get_pressed()
+        if key_input[pygame.K_a] and draw_mode == 3:
+            cnt += 1;
+            if cnt % speed == 0:
+                cnt = 1;
+                current_value = max(0, current_value - 1)
+        elif key_input[pygame.K_s] and draw_mode == 3:
+            cnt += 1;
+            if cnt % speed == 0:
+                current_value += 1
+                cnt = 1;
     if mouse_pressed:
         x, y = pygame.mouse.get_pos()
         row, col = y // CELL_SIZE, x // CELL_SIZE

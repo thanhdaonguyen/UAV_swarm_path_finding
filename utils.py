@@ -105,12 +105,27 @@ def wavefront(goal, map):
     
     def bfs_condition(state_map, result, pos):
         x, y = pos
-        return state_map[x][y] == Map.CellState.NOT_SCANNED and result[x][y] == -1
+        return (state_map[x][y] != Map.CellState.UNREACHABLE and state_map[x][y] != Map.CellState.NO_INTEREST) and result[x][y] == -1
 
     pq = []
     heapq.heappush(pq, (0, goal[0], goal[1]))
+    
+    if (goal[0] < 0 or goal[0] >= rows) or (goal[1] < 0 or goal[1] >= cols):
+        def distant(a, b):
+            return abs(a[0] - b[0]) + abs(a[1] - b[1]) 
+        ma_dis = 0
+        goal = (0, 0)
+
+        for x in range(len(map.state)):
+            for y in range(len(map.state[0])):
+                if map.state[x][y] == map.CellState.NOT_SCANNED:
+                    if distant((x, y), uav_start) >= ma_dis:
+                        ma_dis = distant((x, y), uav_start)
+                        goal = (x, y)
+
     result[goal[0]][goal[1]] = 0
 
+    #print(goal)
     while pq:
         dist, x, y = heapq.heappop(pq)
         for dx, dy in directions:
@@ -119,9 +134,9 @@ def wavefront(goal, map):
                 result[nx][ny] = dist + 1
                 heapq.heappush(pq, (dist + 1, nx, ny))
     
-    result = np.array(result, dtype=np.float32)
+    result = np.array(result, dtype=np.float32) + 1
     priority = (np.array(map.priority) * max(result.flatten()) / max(np.array(map.priority).flatten()))
-    max_value_wavefront = max(result.flatten())
+    pre_scale = result.copy()
 
     def distance(a, b):
         return abs(a[0] - b[0]) + abs(a[1] - b[1])
@@ -135,20 +150,29 @@ def wavefront(goal, map):
     #print(sum_matrix.tolist())
     # (matrix[shape(0) - result_shape(0) - i:, shape(0) - result_shape(0) - i:] * priority).sum()
 
+
     check = False
     for i in range(rows):
         for j in range(cols):
-            if state_map[i][j] != Map.CellState.NOT_SCANNED:
-                start_point_x = sum_matrix.shape[0] - result.shape[0] - i
+            if state_map[i][j] == Map.CellState.NOT_SCANNED:
+                start_point_x = sum_matrix.shape[0] - result.shape[0] - i   
                 start_point_y = sum_matrix.shape[1] - result.shape[1] - j
+                pre_scale[i][j] += ((priority ** 2) / (np.log2(sum_matrix[start_point_x: start_point_x + result.shape[0], start_point_y:start_point_y + result.shape[1]]) + 1)).sum()
                 #print(i, j, sum_matrix[start_point_x: start_point_x + result.shape[0], start_point_y:start_point_y + result.shape[1]])
-                result[i][j] += (sum_matrix[start_point_x: start_point_x + result.shape[0], start_point_y:start_point_y + result.shape[1]] * priority).sum()
+                #result[i][j] = result[i][j] * (priority / np.sqrt(sum_matrix[start_point_x: start_point_x + result.shape[0], start_point_y:start_point_y + result.shape[1]])).sum() / (result.shape[0] * result.shape[1])
         #         check = True
         #         break
         # if check:
         #     break
                 # print(state_map[x][y])
-                
+    #print(pre_scale)
+    pre_scale =  (np.array(pre_scale) * max(result.flatten()) / max(np.array(pre_scale).flatten()))
+    # pre_scale = pre_scale ** 10
+    # pre_scale =  (np.array(pre_scale) * max(result.flatten()) / max(np.array(pre_scale).flatten()))
+    # pre_scale = pre_scale ** 10  
+    # pre_scale =  (np.array(pre_scale) * max(result.flatten()) / max(np.array(pre_scale).flatten()))
+    result = result + pre_scale
+    #print(result)
     # f = open("output.txt", 'w')
     # f.write(str(result.tolist()))
     # f.write("\n")
@@ -163,6 +187,7 @@ def wavefront(goal, map):
     #     result += 0.1 * (np.array(map.priority) * max(result.flatten()) / max(np.array(map.priority).flatten()))
 
     #f.write(str(result.tolist()))
+
 
     return result
 
@@ -423,8 +448,8 @@ def select_target_cell2(wavefront_map, current_position, map):
                                     min_cost = g_cost
                                     result = wavefront_map[nx][ny]
                                     cell = (nx, ny)
-                        else:
-                            heapq.heappush(pq, (g_cost + heuristic((nx, ny), current_position), nx, ny))
+                            else:
+                                heapq.heappush(pq, (g_cost + heuristic((nx, ny), current_position), nx, ny))
                 else:
                     g_cost = shortest_path_map[x][y] + 1
                     if g_cost < shortest_path_map[nx][ny]:
@@ -444,8 +469,8 @@ def select_target_cell2(wavefront_map, current_position, map):
                                     min_cost = g_cost
                                     result = wavefront_map[nx][ny]
                                     cell = (nx, ny)
-                        else:
-                            heapq.heappush(pq, (g_cost + heuristic((nx, ny), current_position), nx, ny))
+                            else:
+                                heapq.heappush(pq, (g_cost + heuristic((nx, ny), current_position), nx, ny))
     
     # Reconstruct the path
     path = []
@@ -703,18 +728,18 @@ def select_target_cell(wavefront_map, current_position, map):
                         parent_map[(nx, ny)] = parent_map[(x, y)]
                         if state_map[nx][ny] == Map.CellState.NOT_SCANNED:
                             if result <= wavefront_map[nx][ny] and min_cost >= g_cost:
-                                if result == wavefront_map[nx][ny]:
-                                    num_of_surround_cell = count_surround_not_NOT_SCANNED_cell(map, nx, ny)
-                                    if num_of_max_surround_cell < num_of_surround_cell:
-                                        num_of_max_surround_cell = num_of_surround_cell
-                                        min_cost = g_cost
-                                        result = wavefront_map[nx][ny]
-                                        cell = (nx, ny)
-                                else:
-                                    num_of_max_surround_cell = 0
-                                    min_cost = g_cost
-                                    result = wavefront_map[nx][ny]
-                                    cell = (nx, ny)
+                                # if result == wavefront_map[nx][ny]:
+                                #     num_of_surround_cell = count_surround_not_NOT_SCANNED_cell(map, nx, ny)
+                                #     if num_of_max_surround_cell < num_of_surround_cell:
+                                #         num_of_max_surround_cell = num_of_surround_cell
+                                #         min_cost = g_cost
+                                #         result = wavefront_map[nx][ny]
+                                #         cell = (nx, ny)
+                                # else:
+                                num_of_max_surround_cell = 0
+                                min_cost = g_cost
+                                result = wavefront_map[nx][ny]
+                                cell = (nx, ny)
                         else:
                             heapq.heappush(pq, (g_cost + heuristic((nx, ny), current_position), nx, ny))
                 else:
@@ -724,18 +749,18 @@ def select_target_cell(wavefront_map, current_position, map):
                         parent_map[(nx, ny)] = (x, y)
                         if state_map[nx][ny] == Map.CellState.NOT_SCANNED:
                             if result <= wavefront_map[nx][ny] and min_cost >= g_cost:
-                                if result == wavefront_map[nx][ny]:
-                                    num_of_surround_cell = count_surround_not_NOT_SCANNED_cell(map, nx, ny)
-                                    if num_of_max_surround_cell < num_of_surround_cell:
-                                        num_of_max_surround_cell = num_of_surround_cell
-                                        min_cost = g_cost
-                                        result = wavefront_map[nx][ny]
-                                        cell = (nx, ny)
-                                else:
-                                    num_of_max_surround_cell = 0
-                                    min_cost = g_cost
-                                    result = wavefront_map[nx][ny]
-                                    cell = (nx, ny)
+                                # if result == wavefront_map[nx][ny]:
+                                #     num_of_surround_cell = count_surround_not_NOT_SCANNED_cell(map, nx, ny)
+                                #     if num_of_max_surround_cell < num_of_surround_cell:
+                                #         num_of_max_surround_cell = num_of_surround_cell
+                                #         min_cost = g_cost
+                                #         result = wavefront_map[nx][ny]
+                                #         cell = (nx, ny)
+                                # else:
+                                num_of_max_surround_cell = 0
+                                min_cost = g_cost
+                                result = wavefront_map[nx][ny]
+                                cell = (nx, ny)
                         else:
                             heapq.heappush(pq, (g_cost + heuristic((nx, ny), current_position), nx, ny))
     
