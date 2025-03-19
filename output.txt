@@ -196,3 +196,17 @@ type = UAV4Res, time = 21.58333333333339, cost = 11102.533333333458, data =
 type = Tsunami_without_priority, time = 23.79999999999993, cost = 11366.300000000083, data = 
  [{0: 0}]
 map type: 3, num of uavs: 4 
+type = randomUAVCluster, time = 164.26666666668953, cost = 312523.94999999565, data = 
+ [{0: 0}]
+type = Tsunami_without_priority, time = 145.4333333333412, cost = 270775.34999999165, data = 
+ [{0: 0}]
+type = UAV4Res, time = 154.11666666668145, cost = 286880.7999999929, data = 
+ [{0: 0}]
+map type: 4, num of uavs: 2 
+type = randomUAVCluster, time = 157.66666666668428, cost = 298153.716666659, data = 
+ [{0: 0}]
+type = Tsunami_without_priority, time = 145.98333333334165, cost = 273229.29999998974, data = 
+ [{0: 0}]
+type = UAV4Res, time = 148.1833333333434, cost = 270201.84999999026, data = 
+ [{0: 0}]
+map type: 4, num of uavs: 2 
