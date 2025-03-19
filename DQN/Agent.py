@@ -132,9 +132,9 @@ class Agent:
     self.targetModel =  Model(metadata_dim=len(swarm.uavs) * 2 + 1).to(device)
     self.targetModel.load_state_dict(self.trainModel.state_dict())
 
-    self.optimizer = torch.optim.Adam(self.trainModel.parameters(), lr=1e-4)
+    self.optimizer = torch.optim.Adam(self.trainModel.parameters(), lr=1e-5)
     self.loss = nn.MSELoss()
-    self.gamma = 0.8
+    self.gamma = 0.6
     self.relay_memory = ReplayMemory(64 * 64)
     self.batch_size = 16
     self.updateTargetThreshold = 5
@@ -167,7 +167,7 @@ class Agent:
     
     # Update train model using target model
     Q_newState_best_value = torch.max(self.targetModel(newState_map, newState_pos))
-    Q_target = reward + self.gamma * Q_newState_best_value * terminal
+    Q_target = reward * (1 - self.gamma) + self.gamma * Q_newState_best_value * terminal
     Q_train = self.trainModel(state_map, state_pos)[(torch.arange(0, action.size(0)), action[:, 0], action[:, 1])]
     loss = self.loss(Q_target, Q_train)
     self.optimizer.zero_grad()
@@ -188,7 +188,7 @@ class Agent:
     q_value = self.targetModel(state_map, state_pos)[0]
     q_value = q_value * self.possible_move_map_tensor
     action = (q_value==torch.max(q_value)).nonzero()[0].squeeze()
-    return (action[0].item(), action[1].item())
+    return (action[0].item(), action[1].item()) , q_value
   
   def set_state(self, swarm, uav_index):
     self.state = get_state(swarm, uav_index, self.possible_move_map)
@@ -215,10 +215,12 @@ class Agent:
     if(rand < epsilon):     
       return choice()
     else:
-      action = self.decide_action()
+      action, q = self.decide_action()
       if self.possible_move_map[action[0]][action[1]] == 0:
+        print(f"bad move, q: {q[action[0], action[1]]}")
         return choice()
       else:
+        print(f"good_move, q: {q[action[0], action[1]]}")
         return action
 
   # def printQvalue(self, state):

@@ -17,9 +17,9 @@ import time
 from Measurer import Measurer
 
 
-measurer = Measurer(type = "UAV4Res", num_of_uavs = num_of_uavs, map = maptype)
+measurer = Measurer(type = "Tsunami_without_priority", num_of_uavs = num_of_uavs, map = maptype)
 # Bước 1: Khởi tạo các thực thể, biến đếm
-drawer = Drawer("UAV4Res")                       # Khởi tạo đối tượng Drawer
+drawer = Drawer("Tsunami_without_priority")                       # Khởi tạo đối tượng Drawer
 uavs = []                               # Khởi tạo danh sách các UAVs
 for i in range(num_of_uavs):
     uavs.append(UAV(uav_distance.real, 0, time_charge, min_speed[i], max_speed[i], None, Point(*uav_start), "./images/uav.png"))
@@ -80,7 +80,7 @@ while running:
             uav_cell_position = uav.get_cell_position()
             '''Lựa chọn cho các UAV tìm kiếm ô tiếp theo để quét dựa trên vị trí của cluster center hiện tại'''
             cluster_map = create_cluster_map(map0, clusters[current_cluster_index].available_cells)
-            wavefront_map = wavefront_with_priority((current_cluster_end_cell.x, current_cluster_end_cell.y), cluster_map)
+            wavefront_map = wavefront((current_cluster_end_cell.x, current_cluster_end_cell.y), cluster_map)
             next_cell, shortest_path, path_to_charge = select_target_cell(wavefront_map, uav_cell_position, cluster_map)
             '''Lựa chọn cho các UAV tìm kiếm ô tiếp theo để quét dựa trên vị trí hiện tại của UAV'''
             # wavefront_map = wavefront((uav_cell_position[0], uav_cell_position[1]), map0)

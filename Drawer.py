@@ -25,7 +25,9 @@ class Drawer:
         if mode == "tsunami":
             pygame.display.set_caption("Tsunami simulation")
             os.environ['SDL_VIDEO_WINDOW_POS'] = "100,100"  # Change "100,100" to your desired position
-        
+        elif mode == "Tsunami_without_priority":
+            pygame.display.set_caption("Tsunami_without_priority")
+            os.environ['SDL_VIDEO_WINDOW_POS'] = "100,600"
         elif mode == "UAV4Res":
             pygame.display.set_caption("UAV4Res simulation")
             os.environ['SDL_VIDEO_WINDOW_POS'] = "900,100"  # Change "800,100" to your desired position

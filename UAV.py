@@ -78,6 +78,8 @@ class UAV:
                 else:
                     self.recent_position.x += min(abs(speed * self.direction.x / FPS), abs(dx)) * get_sign(self.direction.x)
                     self.recent_position.y += min(abs(speed * self.direction.y / FPS), abs(dy)) * get_sign(self.direction.y)
+        
+        return (self.status == self.UAVState.FREE)
 
     def scan(self, map):
         """

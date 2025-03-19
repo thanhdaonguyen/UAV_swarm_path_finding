@@ -40,7 +40,7 @@ def trainRL(map, swarm, radius, recent_position, time_charge):
     step = 1000
     e = 0.9
     for i in range(step):
-        e = max(0.9 * e, 0.2)
+        e = max(0.99 * e, 0.2)
         t11 = time.time()
         map = copy.deepcopy(first_map)
         swarm = copy.deepcopy(result_swarm)
@@ -81,28 +81,28 @@ def trainRL(map, swarm, radius, recent_position, time_charge):
         while running:
             t1 = time.time()
             cnt_blocked_uavs = 0
-            for uav in swarm.uavs:
-                if uav.is_blocked == 1:
-                    uav.time_charge -= 1
-                    #print(uav.time_charge)
-                    cnt_blocked_uavs += 1;
-                    if  uav.time_charge == 0:
-                        cnt_blocked_uavs -= 1;
-                        uav.is_blocked = 0
-                        uav.distance= uav_distance
-                        uav.time_charge = time_charge
-                        uav.status = UAV.UAVState.FREE
+            # for uav in swarm.uavs:
+            #     if uav.is_blocked == 1:
+            #         uav.time_charge -= 1
+            #         #print(uav.time_charge)
+            #         cnt_blocked_uavs += 1;
+            #         if  uav.time_charge == 0:
+            #             cnt_blocked_uavs -= 1;
+            #             uav.is_blocked = 0
+            #             uav.distance= uav_distance
+            #             uav.time_charge = time_charge
+            #             uav.status = UAV.UAVState.FREE
 
             #print(uav_index)
-            if cnt_blocked_uavs != len(swarm.uavs):
-                num_of_busy_uavs = 0
-                while uav_index < len(swarm.uavs) and swarm.uavs[uav_index].status == UAV.UAVState.BUSY:
-                    uav_index += 1
-                    if uav_index == len(swarm.uavs):
-                        uav_index = 0
-                    num_of_busy_uavs += 1
-                    if num_of_busy_uavs >= len(swarm.uavs):     
-                        break
+            # if cnt_blocked_uavs != len(swarm.uavs):
+            num_of_busy_uavs = 0
+            while uav_index < len(swarm.uavs) and swarm.uavs[uav_index].status == UAV.UAVState.BUSY:
+                uav_index += 1
+                if uav_index == len(swarm.uavs):
+                    uav_index = 0
+                num_of_busy_uavs += 1
+                if num_of_busy_uavs >= len(swarm.uavs):     
+                    break
                     
                     #print(swarm.uavs[uav_index].status)
             recent_uav = swarm.uavs[uav_index]
@@ -137,13 +137,13 @@ def trainRL(map, swarm, radius, recent_position, time_charge):
                         previous_state = global_agent.state
                         previous_next_cell = next_cell
                     else:
-                        _, previous_state = global_agent.iter(previous_state, previous_next_cell, previous_reward_point - measurer.reward_point, 999999999999999 if measurer.cost == 0 else 1 / measurer.cost)
+                        _, previous_state = global_agent.iter(previous_state, previous_next_cell, 0, np.e ** (-measurer.time) * 1000)
                         previous_next_cell = next_cell
                     #_, previous_state = recent_uav.agent.iter(previous_state, next_cell, measurer.reward_point - previous_reward_point, measurer.reward_point)
                     # if uav_index == 1:
                     #     print(f"loss:{_}")
                     #     print(f"reward: {measurer.reward_point - previous_reward_point}")
-                    previous_reward_point = measurer.reward_point
+                    #previous_reward_point = measurer.reward_point
                     
                     t5 = time.time()
                     recent_uav.recent_path = shortest_path
@@ -152,34 +152,48 @@ def trainRL(map, swarm, radius, recent_position, time_charge):
                     map.state[next_cell[0]][next_cell[1]] = Map.CellState.SCANNING
                     recent_uav.target_position = Point(next_cell[0] * cell_size + cell_size // 2, 
                                                 next_cell[1] * cell_size + cell_size // 2)
-                    dis = cal_distance_path(recent_uav.recent_path)
-                    recent_uav.distance -= dis
-                    if recent_uav.distance.real < dis_threshold:
-                            map.state[next_cell[0]][next_cell[1]] = Map.CellState.NOT_SCANNED
-                            recent_uav.is_blocked = 1
-                            recent_uav.index_path = 0
-                            recent_uav.recent_path = theta_star_path(uav_cell_position, map, base)
+                    # dis = cal_distance_path(recent_uav.recent_path)
+                    # recent_uav.distance -= dis
+                    # if recent_uav.distance.real < dis_threshold:
+                    #         map.state[next_cell[0]][next_cell[1]] = Map.CellState.NOT_SCANNED
+                    #         recent_uav.is_blocked = 1
+                    #         recent_uav.index_path = 0
+                    #         recent_uav.recent_path = theta_star_path(uav_cell_position, map, base)
 
                     t6 = time.time()
-            if cnt_blocked_uavs != len(swarm.uavs):
-                swarm.move_a_frame()
+            #if cnt_blocked_uavs != len(swarm.uavs):
+            while swarm.move_a_frame() == False:  
+                #print("ok")
+            #swarm.move_a_frame()
                 priority_total, priority_count = swarm.scan(map)
                 count -= priority_count
-                measurer.add_cost(priority_total)
+                # measurer.add_cost(priority_total)
+                if i % 200 == 0:
+                    drawer.draw_all(map, swarm)
+                    drawer.clock.tick(FPS)
+                measurer.tick_time()
+            
+            swarm.move_a_frame()
+            priority_total, priority_count = swarm.scan(map)
+            count -= priority_count
+            # measurer.add_cost(priority_total)
+            if i % 200 == 0:
+                drawer.draw_all(map, swarm)
+                drawer.clock.tick(FPS)
             measurer.tick_time()
+            #print("what")
             t7 = time.time()
 
             #print(f"time: {t2 - t1}, {t3 - t2}, {t4 - t3}, {t5 - t4}, {t6 - t5}, {t7 - t6}")
             
 
-            drawer.draw_all(map, swarm)
-            drawer.clock.tick(FPS)
+            
         # t11 = time.time()
         # for index in range(len(result_swarm.uavs)): 
         #     #print(result_swarm.get_cell_position())
         #     result_swarm.uavs[index].agent = copy.deepcopy(swarm.uavs[index].agent)  
         # t12 = time.time()
         # print(f"time: {t12 - t11}")
-        print(f"final_cost in step {i}: {measurer.cost}")
+        print(f"final_cost in step {i}: {measurer.time}")
         print(f"final_reward_point in step {i}: {measurer.reward_point}")
         f.write(f"{measurer.cost}, ")

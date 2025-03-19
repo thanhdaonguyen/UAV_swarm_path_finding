@@ -135,18 +135,137 @@ def wavefront(goal, map):
                 heapq.heappush(pq, (dist + 1, nx, ny))
     
     result = np.array(result, dtype=np.float32) + 1
+    # priority = (np.array(map.priority) * max(result.flatten()) / max(np.array(map.priority).flatten()))
+    # pre_scale = result.copy()
+
+    # def distance(a, b):
+    #     return abs(a[0] - b[0]) + abs(a[1] - b[1])
+
+    # sum_matrix = np.zeros((result.shape[0] * 2 + 1, result.shape[1] * 2 + 1))
+
+    # for i in range(sum_matrix.shape[0]):
+    #     for j in range(sum_matrix.shape[1]):
+    #         sum_matrix[i, j] = distance((i, j), (result.shape[0] + 1, result.shape[1] + 1)) + 1
+
+    # #print(sum_matrix.tolist())
+    # # (matrix[shape(0) - result_shape(0) - i:, shape(0) - result_shape(0) - i:] * priority).sum()
+
+
+    # check = False
+    # for i in range(rows):
+    #     for j in range(cols):
+    #         if state_map[i][j] == Map.CellState.NOT_SCANNED:
+    #             start_point_x = sum_matrix.shape[0] - result.shape[0] - i   
+    #             start_point_y = sum_matrix.shape[1] - result.shape[1] - j
+    #             pre_scale[i][j] += ((priority ** 2) / (np.log2(sum_matrix[start_point_x: start_point_x + result.shape[0], start_point_y:start_point_y + result.shape[1]]) + 1)).sum()
+    #             #print(i, j, sum_matrix[start_point_x: start_point_x + result.shape[0], start_point_y:start_point_y + result.shape[1]])
+    #             #result[i][j] = result[i][j] * (priority / np.sqrt(sum_matrix[start_point_x: start_point_x + result.shape[0], start_point_y:start_point_y + result.shape[1]])).sum() / (result.shape[0] * result.shape[1])
+    #     #         check = True
+    #     #         break
+    #     # if check:
+    #     #     break
+    #             # print(state_map[x][y])
+    # #print(pre_scale)
+    # pre_scale =  (np.array(pre_scale) * max(result.flatten()) / max(np.array(pre_scale).flatten()))
+    # # pre_scale = pre_scale ** 10
+    # # pre_scale =  (np.array(pre_scale) * max(result.flatten()) / max(np.array(pre_scale).flatten()))
+    # # pre_scale = pre_scale ** 10  
+    # # pre_scale =  (np.array(pre_scale) * max(result.flatten()) / max(np.array(pre_scale).flatten()))
+    # result = result + pre_scale
+    # #print(result)
+    # # f = open("output.txt", 'w')
+    # # f.write(str(result.tolist()))
+    # # f.write("\n")
+
+
+    # #result = (result + 1) * np.array(map.priority)
+    # # f.write(str(result.tolist()))
+    # # f.write("\n")
+
+    # # if max(np.array(map.priority).flatten()) != 0:
+    # #     result += 1
+    # #     result += 0.1 * (np.array(map.priority) * max(result.flatten()) / max(np.array(map.priority).flatten()))
+
+    # #f.write(str(result.tolist()))
+
+
+    return result
+
+def wavefront_with_priority(goal, map):
+    """
+        Calculate the wavefront map from the goal position
+        Args:
+            goal: Tuple of goal cell position (x, y)
+            map: Map object
+        Returns:
+            2D array representing the wavefront map
+    """
+    state_map = map.state
+    rows, cols = len(state_map), len(state_map[0])
+    result = [[-1 for _ in range(cols)] for _ in range(rows)]
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    
+    def bfs_condition(state_map, result, pos):
+        x, y = pos
+        return (state_map[x][y] != Map.CellState.UNREACHABLE and state_map[x][y] != Map.CellState.NO_INTEREST) and result[x][y] == -1
+
+    pq = []
+    heapq.heappush(pq, (0, goal[0], goal[1]))
+    
+    if (goal[0] < 0 or goal[0] >= rows) or (goal[1] < 0 or goal[1] >= cols):
+        def distant(a, b):
+            return abs(a[0] - b[0]) + abs(a[1] - b[1]) 
+        ma_dis = 0
+        goal = (0, 0)
+
+        for x in range(len(map.state)):
+            for y in range(len(map.state[0])):
+                if map.state[x][y] == map.CellState.NOT_SCANNED:
+                    if distant((x, y), uav_start) >= ma_dis:
+                        ma_dis = distant((x, y), uav_start)
+                        goal = (x, y)
+
+    result[goal[0]][goal[1]] = 0
+
+    #print(goal)
+    while pq:
+        dist, x, y = heapq.heappop(pq)
+        for dx, dy in directions:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < rows and 0 <= ny < cols and bfs_condition(state_map, result, (nx, ny)):
+                result[nx][ny] = dist + 1
+                heapq.heappush(pq, (dist + 1, nx, ny))
+    
+    result = np.array(result, dtype=np.float32) + 1
+
+    # valid = np.array(map.state)
+    # valid[(valid == map.CellState.NO_INTEREST) and (valid == map.CellState.UNREACHABLE)] = 1
+    # valid[valid != 1] = 0
+
     priority = (np.array(map.priority) * max(result.flatten()) / max(np.array(map.priority).flatten()))
-    pre_scale = result.copy()
+    priority = np.copy(priority)
+    for i in range(rows):
+        for j in range(cols):
+            if state_map[i][j] == Map.CellState.NO_INTEREST:
+                priority[i][j] = 0;
+    
+    pre_scale = np.zeros((rows, cols))
 
     def distance(a, b):
         return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
-    sum_matrix = np.zeros((result.shape[0] * 2 + 1, result.shape[1] * 2 + 1))
+    sum_matrix = np.zeros((rows * 2 + 1, cols * 2 + 1))
 
     for i in range(sum_matrix.shape[0]):
         for j in range(sum_matrix.shape[1]):
-            sum_matrix[i, j] = distance((i, j), (result.shape[0] + 1, result.shape[1] + 1)) + 1
+            sum_matrix[i, j] = distance((i, j), (rows + 1, cols + 1)) + 1
 
+
+    # print(priority[17, 4])
+    # print(result[17, 4])
+    # print(priority.sum())
+    # print(result.sum())
+    # print(sum_matrix.sum())
     #print(sum_matrix.tolist())
     # (matrix[shape(0) - result_shape(0) - i:, shape(0) - result_shape(0) - i:] * priority).sum()
 
@@ -154,10 +273,19 @@ def wavefront(goal, map):
     check = False
     for i in range(rows):
         for j in range(cols):
-            if state_map[i][j] == Map.CellState.NOT_SCANNED:
-                start_point_x = sum_matrix.shape[0] - result.shape[0] - i   
-                start_point_y = sum_matrix.shape[1] - result.shape[1] - j
-                pre_scale[i][j] += ((priority ** 2) / (np.log2(sum_matrix[start_point_x: start_point_x + result.shape[0], start_point_y:start_point_y + result.shape[1]]) + 1)).sum()
+            if state_map[i][j] != Map.CellState.UNREACHABLE or state_map[i][j] == Map.CellState.NO_INTEREST:
+                start_point_x = sum_matrix.shape[0] - rows - i   
+                start_point_y = sum_matrix.shape[1] - cols - j
+
+                pre_scale[i, j] = ((priority ** 2) / (np.log2(sum_matrix[start_point_x: start_point_x + rows, start_point_y:start_point_y + cols]) + 1)).sum()
+                
+                # if i == 17 and j == 4:
+                #     print("???")
+                #     print(((priority ** 2) / (np.log2(sum_matrix[start_point_x: start_point_x + rows, start_point_y:start_point_y + cols]) + 1)).sum())
+                #     print(result[17, 4])
+                #     print(result.max())
+                #     print(pre_scale[17, 4])
+                #     print(pre_scale.max())
                 #print(i, j, sum_matrix[start_point_x: start_point_x + result.shape[0], start_point_y:start_point_y + result.shape[1]])
                 #result[i][j] = result[i][j] * (priority / np.sqrt(sum_matrix[start_point_x: start_point_x + result.shape[0], start_point_y:start_point_y + result.shape[1]])).sum() / (result.shape[0] * result.shape[1])
         #         check = True
@@ -166,13 +294,16 @@ def wavefront(goal, map):
         #     break
                 # print(state_map[x][y])
     #print(pre_scale)
-    pre_scale =  (np.array(pre_scale) * max(result.flatten()) / max(np.array(pre_scale).flatten()))
+    #print(max(result.flatten()))
+    pre_scale =  (pre_scale * result.max() / pre_scale.max())
+    #print(pre_scale)
     # pre_scale = pre_scale ** 10
     # pre_scale =  (np.array(pre_scale) * max(result.flatten()) / max(np.array(pre_scale).flatten()))
     # pre_scale = pre_scale ** 10  
     # pre_scale =  (np.array(pre_scale) * max(result.flatten()) / max(np.array(pre_scale).flatten()))
+    #result = pre_scale
     result = result + pre_scale
-    #print(result)
+    #print(result[17][4])
     # f = open("output.txt", 'w')
     # f.write(str(result.tolist()))
     # f.write("\n")

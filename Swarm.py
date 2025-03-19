@@ -35,8 +35,12 @@ class Swarm:
         """
             Move the swarm a frame
         """
+        check = False
         for uav in self.uavs:
-            uav.move_a_frame()
+            if uav.move_a_frame():
+                check = True
+
+        return check
 
     def scan(self, map):
         priority_total = 0
